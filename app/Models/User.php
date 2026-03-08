@@ -1,0 +1,97 @@
+<?php
+
+namespace App\Models;
+
+use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
+
+class User extends Authenticatable
+{
+    /** @use HasFactory<UserFactory> */
+    use HasApiTokens, HasFactory, SoftDeletes;
+
+    protected $fillable = [
+        'email',
+        'first_name',
+        'last_name',
+        'avatar',
+        'is_pro',
+        'pro_expires_at',
+        'onesignal_player_id',
+        'notification_settings',
+    ];
+
+    protected $hidden = [
+        'remember_token',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_pro' => 'boolean',
+            'pro_expires_at' => 'datetime',
+            'notification_settings' => 'array',
+        ];
+    }
+
+    public function leagues(): BelongsToMany
+    {
+        return $this->belongsToMany(League::class, 'league_members')
+            ->withPivot('role')
+            ->withTimestamps();
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(UserItem::class);
+    }
+
+    public function streaks(): HasMany
+    {
+        return $this->hasMany(Streak::class);
+    }
+
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    public function dailySteps(): HasMany
+    {
+        return $this->hasMany(DailySteps::class);
+    }
+
+    public function stepAnomalies(): HasMany
+    {
+        return $this->hasMany(StepAnomaly::class);
+    }
+
+    public function deviceAttestations(): HasMany
+    {
+        return $this->hasMany(DeviceAttestation::class);
+    }
+
+    public function isPro(): bool
+    {
+        return $this->is_pro
+            && ($this->pro_expires_at === null || $this->pro_expires_at->isFuture());
+    }
+
+    public function getFullNameAttribute(): string
+    {
+        return "{$this->first_name} {$this->last_name}";
+    }
+
+    public function getStreak(string $leagueId, string $type): int
+    {
+        return $this->streaks()
+            ->where('league_id', $leagueId)
+            ->where('type', $type)
+            ->value('current_count') ?? 0;
+    }
+}
