@@ -72,6 +72,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Sync
     Route::post('/sync/steps', [SyncController::class, 'syncSteps'])
         ->middleware(['throttle:sync-steps', 'verify-app-attest']);
+    Route::post('/sync/steps/batch', [SyncController::class, 'syncStepsBatch'])
+        ->middleware('verify-app-attest');
 
     // App Attest
     Route::post('/attest/challenge', [AttestController::class, 'challenge']);

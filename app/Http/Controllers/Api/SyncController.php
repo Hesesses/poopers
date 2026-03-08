@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SyncStepsBatchRequest;
 use App\Http\Requests\SyncStepsRequest;
 use App\Services\StepSyncService;
 use Illuminate\Http\JsonResponse;
@@ -29,5 +30,27 @@ class SyncController extends Controller
             'modified_steps' => $dailySteps->modified_steps,
             'date' => $dailySteps->date->toDateString(),
         ]);
+    }
+
+    public function syncStepsBatch(SyncStepsBatchRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+        $results = [];
+
+        foreach ($validated['days'] as $day) {
+            $dailySteps = $this->stepSyncService->sync(
+                $request->user(),
+                $day['steps'],
+                $day['date'],
+            );
+
+            $results[] = [
+                'steps' => $dailySteps->steps,
+                'modified_steps' => $dailySteps->modified_steps,
+                'date' => $dailySteps->date->toDateString(),
+            ];
+        }
+
+        return response()->json(['results' => $results]);
     }
 }
