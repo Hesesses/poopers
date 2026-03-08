@@ -43,9 +43,9 @@ class AuthController extends Controller
         ]);
     }
 
-    public function me(Request $request): UserResource
+    public function me(Request $request): JsonResponse
     {
-        return new UserResource($request->user());
+        return response()->json(new UserResource($request->user()));
     }
 
     public function logout(Request $request): JsonResponse
