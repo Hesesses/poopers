@@ -63,4 +63,15 @@ class AuthController extends Controller
 
         return response()->json(['message' => 'Account deleted successfully.']);
     }
+
+    public function devLogin(Request $request): JsonResponse
+    {
+        $user = \App\Models\User::findOrFail($request->input('user_id', 1));
+        $token = $user->createToken('dev')->plainTextToken;
+
+        return response()->json([
+            'user' => new UserResource($user),
+            'token' => $token,
+        ]);
+    }
 }
