@@ -13,7 +13,7 @@ class StandingsService
 {
     public function getMonthStandings(League $league, ?string $yearMonth = null): Collection
     {
-        $yearMonth ??= now()->format('Y-m');
+        $yearMonth ??= now()->setTimezone($league->timezone)->format('Y-m');
         $start = Carbon::parse($yearMonth.'-01')->startOfMonth();
         $end = Carbon::parse($yearMonth.'-01')->endOfMonth();
 
@@ -41,8 +41,9 @@ class StandingsService
 
     public function getWeekStandings(League $league): Collection
     {
-        $start = now()->startOfWeek();
-        $end = now()->endOfWeek();
+        $leagueTime = now()->setTimezone($league->timezone);
+        $start = $leagueTime->copy()->startOfWeek();
+        $end = $leagueTime->copy()->endOfWeek();
 
         return LeagueDayResult::query()
             ->where('league_id', $league->id)
@@ -68,7 +69,7 @@ class StandingsService
 
     public function getYesterdayResults(League $league): Collection
     {
-        $yesterday = now()->subDay()->toDateString();
+        $yesterday = now()->setTimezone($league->timezone)->subDay()->toDateString();
 
         return LeagueDayResult::query()
             ->where('league_id', $league->id)
@@ -87,7 +88,7 @@ class StandingsService
     {
         $leagueTime = now()->setTimezone($league->timezone);
         $hour = $leagueTime->hour;
-        $today = now()->toDateString();
+        $today = $leagueTime->toDateString();
 
         $visibility = $this->getVisibilityLevel($hour);
 

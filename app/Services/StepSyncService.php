@@ -14,6 +14,7 @@ class StepSyncService
     public function __construct(
         private StepHeuristicsService $heuristicsService,
         private StepVelocityService $velocityService,
+        private DailyResultService $dailyResultService,
     ) {}
 
     /**
@@ -59,6 +60,11 @@ class StepSyncService
         }
 
         $this->recalculateModifiedSteps($user, $date);
+
+        // Auto-calculate results for past dates
+        if ($date !== now()->toDateString()) {
+            $this->calculateResultsForUserDate($user, $date);
+        }
 
         return $dailySteps->fresh();
     }
@@ -133,5 +139,14 @@ class StepSyncService
         }
 
         return $steps + ($effectData['value'] ?? 0);
+    }
+
+    private function calculateResultsForUserDate(User $user, string $date): void
+    {
+        $leagues = $user->leagues()->with('members')->get();
+
+        foreach ($leagues as $league) {
+            $this->dailyResultService->calculateForLeague($league, $date, awardItems: false);
+        }
     }
 }
