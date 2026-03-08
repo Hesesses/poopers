@@ -10,11 +10,6 @@ use App\Models\User;
 
 class DailyResultService
 {
-    public function __construct(
-        private ItemService $itemService,
-        private StreakService $streakService,
-    ) {}
-
     public function calculateForLeague(League $league, string $date, bool $awardItems = true): void
     {
         if (LeagueDayResult::query()->where('league_id', $league->id)->where('date', $date)->exists()) {
@@ -61,10 +56,10 @@ class DailyResultService
             ]);
 
             if ($awardItems && $isWinner) {
-                $this->itemService->awardRandomItem($member, $league, ItemSource::DailyWin);
+                app(ItemService::class)->awardRandomItem($member, $league, ItemSource::DailyWin);
             }
         }
 
-        $this->streakService->updateStreaks($league, $date);
+        app(StreakService::class)->updateStreaks($league, $date);
     }
 }
