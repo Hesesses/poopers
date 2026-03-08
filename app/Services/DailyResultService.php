@@ -10,10 +10,15 @@ use App\Models\User;
 
 class DailyResultService
 {
-    public function calculateForLeague(League $league, string $date, bool $awardItems = true): void
+    public function calculateForLeague(League $league, string $date, bool $awardItems = true, bool $recalculate = false): void
     {
-        if (LeagueDayResult::query()->where('league_id', $league->id)->where('date', $date)->exists()) {
-            return;
+        $existingResults = LeagueDayResult::query()->where('league_id', $league->id)->where('date', $date);
+
+        if ($existingResults->exists()) {
+            if (! $recalculate) {
+                return;
+            }
+            $existingResults->delete();
         }
 
         $league->loadMissing('members');

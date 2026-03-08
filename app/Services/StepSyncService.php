@@ -149,7 +149,7 @@ class StepSyncService
         $leagues = $user->leagues()->with('members')->get();
 
         foreach ($leagues as $league) {
-            $this->dailyResultService->calculateForLeague($league, $date, awardItems: false);
+            $this->dailyResultService->calculateForLeague($league, $date, awardItems: false, recalculate: true);
         }
     }
 }
