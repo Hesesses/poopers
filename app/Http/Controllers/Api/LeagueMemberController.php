@@ -34,6 +34,8 @@ class LeagueMemberController extends Controller
 
     public function index(Request $request, League $league): JsonResponse
     {
+        $this->authorize('viewMembers', $league);
+
         $members = $league->leagueMembers()->with('user')->get();
 
         return response()->json(LeagueMemberResource::collection($members));
@@ -59,10 +61,7 @@ class LeagueMemberController extends Controller
 
     public function remove(Request $request, League $league, User $user): JsonResponse
     {
-        $member = $league->leagueMembers()->where('user_id', $request->user()->id)->first();
-        if (! $member || ! $member->isAdmin()) {
-            abort(403, 'Only league admins can remove members.');
-        }
+        $this->authorize('manageMembers', $league);
 
         $this->leagueService->removeMember($request->user(), $league, $user);
 

@@ -19,7 +19,7 @@ class DraftController extends Controller
 
     public function index(Request $request, League $league): JsonResponse
     {
-        $this->authorizeLeagueMember($request->user(), $league);
+        $this->authorize('viewDrafts', $league);
 
         $drafts = Draft::query()
             ->where('league_id', $league->id)
@@ -33,7 +33,7 @@ class DraftController extends Controller
 
     public function show(Request $request, League $league, Draft $draft): DraftResource
     {
-        $this->authorizeLeagueMember($request->user(), $league);
+        $this->authorize('viewDrafts', $league);
 
         $draft->load('picks.user', 'picks.item');
 
@@ -50,7 +50,7 @@ class DraftController extends Controller
 
     public function pick(Request $request, League $league, Draft $draft): JsonResponse
     {
-        $this->authorizeLeagueMember($request->user(), $league);
+        $this->authorize('viewDrafts', $league);
 
         $validated = $request->validate([
             'item_id' => ['required', 'uuid', 'exists:items,id'],
@@ -67,12 +67,5 @@ class DraftController extends Controller
                 'pick_number' => $pick->pick_number,
             ],
         ]);
-    }
-
-    private function authorizeLeagueMember(\App\Models\User $user, League $league): void
-    {
-        if (! $league->members()->where('user_id', $user->id)->exists()) {
-            abort(403, 'You are not a member of this league.');
-        }
     }
 }

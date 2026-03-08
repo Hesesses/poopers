@@ -12,12 +12,7 @@ class LeagueService
 {
     public function create(User $user, string $name, string $icon = '💩', string $timezone = 'UTC'): League
     {
-        // Free tier: max 1 league
-        if (! $user->isPro() && $user->leagues()->count() >= 1) {
-            throw ValidationException::withMessages([
-                'league' => 'Free users can only be in 1 league. Upgrade to PRO for unlimited leagues.',
-            ]);
-        }
+        $this->validateFreeUserLeagueLimit($user);
 
         $league = League::query()->create([
             'name' => $name,
@@ -50,12 +45,7 @@ class LeagueService
             ]);
         }
 
-        // Free tier: max 1 league
-        if (! $user->isPro() && $user->leagues()->count() >= 1) {
-            throw ValidationException::withMessages([
-                'league' => 'Free users can only be in 1 league. Upgrade to PRO for unlimited leagues.',
-            ]);
-        }
+        $this->validateFreeUserLeagueLimit($user);
 
         $currentMemberCount = $league->memberCount();
 
@@ -165,5 +155,14 @@ class LeagueService
         $league->update(['invite_code' => $code]);
 
         return $code;
+    }
+
+    private function validateFreeUserLeagueLimit(User $user): void
+    {
+        if (! $user->isPro() && $user->leagues()->count() >= 1) {
+            throw ValidationException::withMessages([
+                'league' => 'Free users can only be in 1 league. Upgrade to PRO for unlimited leagues.',
+            ]);
+        }
     }
 }

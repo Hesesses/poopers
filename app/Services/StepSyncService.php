@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\ItemEffectStatus;
+use App\Enums\ItemEffectType;
 use App\Models\DailySteps;
 use App\Models\ItemEffect;
 use App\Models\User;
@@ -116,9 +117,11 @@ class StepSyncService
         $item = $effect->userItem->item;
         $effectData = $item->effect;
 
-        return match ($effectData['type'] ?? null) {
-            'reduce_steps' => $this->applyReduction($steps, $effectData),
-            'boost_steps' => $this->applyBoost($steps, $effectData),
+        $type = ItemEffectType::tryFrom($effectData['type'] ?? '');
+
+        return match ($type) {
+            ItemEffectType::ReduceSteps => $this->applyReduction($steps, $effectData),
+            ItemEffectType::BoostSteps => $this->applyBoost($steps, $effectData),
             default => $steps,
         };
     }

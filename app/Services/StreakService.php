@@ -17,60 +17,20 @@ class StreakService
             ->get();
 
         foreach ($results as $result) {
-            $this->updateWinningStreak($result->user_id, $league->id, $result->is_winner);
-            $this->updateNotLosingStreak($result->user_id, $league->id, $result->is_last);
-            $this->updatePooperStreak($result->user_id, $league->id, $result->is_last);
+            $this->updateStreak($result->user_id, $league->id, StreakType::Winning, $result->is_winner);
+            $this->updateStreak($result->user_id, $league->id, StreakType::NotLosing, ! $result->is_last);
+            $this->updateStreak($result->user_id, $league->id, StreakType::Pooper, $result->is_last);
         }
     }
 
-    private function updateWinningStreak(string $userId, string $leagueId, bool $isWinner): void
+    private function updateStreak(string $userId, string $leagueId, StreakType $type, bool $shouldIncrement): void
     {
         $streak = Streak::query()->firstOrCreate(
-            ['user_id' => $userId, 'league_id' => $leagueId, 'type' => StreakType::Winning],
+            ['user_id' => $userId, 'league_id' => $leagueId, 'type' => $type],
             ['current_count' => 0, 'best_count' => 0],
         );
 
-        if ($isWinner) {
-            $streak->increment('current_count');
-            if ($streak->started_at === null) {
-                $streak->update(['started_at' => now()->toDateString()]);
-            }
-            if ($streak->current_count > $streak->best_count) {
-                $streak->update(['best_count' => $streak->current_count]);
-            }
-        } else {
-            $streak->update(['current_count' => 0, 'started_at' => null]);
-        }
-    }
-
-    private function updateNotLosingStreak(string $userId, string $leagueId, bool $isLast): void
-    {
-        $streak = Streak::query()->firstOrCreate(
-            ['user_id' => $userId, 'league_id' => $leagueId, 'type' => StreakType::NotLosing],
-            ['current_count' => 0, 'best_count' => 0],
-        );
-
-        if (! $isLast) {
-            $streak->increment('current_count');
-            if ($streak->started_at === null) {
-                $streak->update(['started_at' => now()->toDateString()]);
-            }
-            if ($streak->current_count > $streak->best_count) {
-                $streak->update(['best_count' => $streak->current_count]);
-            }
-        } else {
-            $streak->update(['current_count' => 0, 'started_at' => null]);
-        }
-    }
-
-    private function updatePooperStreak(string $userId, string $leagueId, bool $isLast): void
-    {
-        $streak = Streak::query()->firstOrCreate(
-            ['user_id' => $userId, 'league_id' => $leagueId, 'type' => StreakType::Pooper],
-            ['current_count' => 0, 'best_count' => 0],
-        );
-
-        if ($isLast) {
+        if ($shouldIncrement) {
             $streak->increment('current_count');
             if ($streak->started_at === null) {
                 $streak->update(['started_at' => now()->toDateString()]);

@@ -16,19 +16,14 @@ class InviteCodeController extends Controller
 
     public function show(Request $request, League $league): JsonResponse
     {
-        if (! $league->members()->where('user_id', $request->user()->id)->exists()) {
-            abort(403, 'You are not a member of this league.');
-        }
+        $this->authorize('viewInviteCode', $league);
 
         return response()->json(['invite_code' => $league->invite_code]);
     }
 
     public function refresh(Request $request, League $league): JsonResponse
     {
-        $member = $league->leagueMembers()->where('user_id', $request->user()->id)->first();
-        if (! $member || ! $member->isAdmin()) {
-            abort(403, 'Only league admins can refresh the invite code.');
-        }
+        $this->authorize('refreshInviteCode', $league);
 
         $code = $this->leagueService->refreshInviteCode($league);
 

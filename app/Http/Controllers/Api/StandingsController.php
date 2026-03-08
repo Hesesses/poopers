@@ -16,7 +16,7 @@ class StandingsController extends Controller
 
     public function month(Request $request, League $league): JsonResponse
     {
-        $this->authorizeLeagueMember($request->user(), $league);
+        $this->authorize('viewStandings', $league);
 
         $standings = $this->standingsService->getMonthStandings($league);
 
@@ -25,7 +25,7 @@ class StandingsController extends Controller
 
     public function week(Request $request, League $league): JsonResponse
     {
-        $this->authorizeLeagueMember($request->user(), $league);
+        $this->authorize('viewStandings', $league);
 
         $standings = $this->standingsService->getWeekStandings($league);
 
@@ -34,7 +34,7 @@ class StandingsController extends Controller
 
     public function yesterday(Request $request, League $league): JsonResponse
     {
-        $this->authorizeLeagueMember($request->user(), $league);
+        $this->authorize('viewStandings', $league);
 
         $results = $this->standingsService->getYesterdayResults($league);
 
@@ -43,17 +43,10 @@ class StandingsController extends Controller
 
     public function today(Request $request, League $league): JsonResponse
     {
-        $this->authorizeLeagueMember($request->user(), $league);
+        $this->authorize('viewStandings', $league);
 
         $data = $this->standingsService->getToday($league, $request->user());
 
         return response()->json($data);
-    }
-
-    private function authorizeLeagueMember(\App\Models\User $user, League $league): void
-    {
-        if (! $league->members()->where('user_id', $user->id)->exists()) {
-            abort(403, 'You are not a member of this league.');
-        }
     }
 }

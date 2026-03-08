@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\ItemEffectStatus;
+use App\Enums\ItemEffectType;
 use App\Enums\ItemRarity;
 use App\Enums\ItemSource;
 use App\Enums\ItemType;
@@ -130,9 +131,11 @@ class ItemService
         $item = $userItem->item;
         $effectType = $item->effect['type'] ?? null;
 
-        return match ($effectType) {
-            'spy_single' => ['steps' => $target->dailySteps()->where('date', now()->toDateString())->value('steps')],
-            'spy_inventory' => [
+        $enumType = ItemEffectType::tryFrom($effectType);
+
+        return match ($enumType) {
+            ItemEffectType::SpySingle => ['steps' => $target->dailySteps()->where('date', now()->toDateString())->value('steps')],
+            ItemEffectType::SpyInventory => [
                 'inventory' => UserItem::query()
                     ->where('league_id', $league->id)
                     ->whereNull('used_at')
@@ -146,7 +149,7 @@ class ItemService
         };
     }
 
-    private function checkDefensiveItems(ItemEffect $effect, User $target, League $league): bool
+    private function checkDefensiveItems(ItemEffect $effect, User $target, League $league, int $depth = 0): bool
     {
         $today = now()->toDateString();
 
@@ -166,21 +169,23 @@ class ItemService
             $defItem = $defEffect->userItem->item;
             $defEffectType = $defItem->effect['type'] ?? null;
 
-            if ($defEffectType === 'block_attack' || $defEffectType === 'block_all_attacks') {
+            $defEnumType = ItemEffectType::tryFrom($defEffectType);
+
+            if ($defEnumType === ItemEffectType::BlockAttack || $defEnumType === ItemEffectType::BlockAllAttacks) {
                 $effect->update([
                     'status' => ItemEffectStatus::Blocked,
                     'blocked_by_item_id' => $defEffect->userItem->item_id,
                 ]);
 
                 // Single-use block is consumed
-                if ($defEffectType === 'block_attack') {
+                if ($defEnumType === ItemEffectType::BlockAttack) {
                     $defEffect->update(['status' => ItemEffectStatus::Blocked]);
                 }
 
                 return true;
             }
 
-            if ($defEffectType === 'reflect_attack') {
+            if ($defEnumType === ItemEffectType::ReflectAttack && $depth < 1) {
                 $effect->update([
                     'status' => ItemEffectStatus::Reflected,
                     'blocked_by_item_id' => $defEffect->userItem->item_id,

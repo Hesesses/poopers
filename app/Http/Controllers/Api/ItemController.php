@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\ItemType;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserItemResource;
 use App\Models\League;
@@ -19,7 +20,7 @@ class ItemController extends Controller
 
     public function index(Request $request, League $league): JsonResponse
     {
-        $this->authorizeLeagueMember($request->user(), $league);
+        $this->authorize('useItems', $league);
 
         $items = UserItem::query()
             ->where('user_id', $request->user()->id)
@@ -34,7 +35,7 @@ class ItemController extends Controller
 
     public function use(Request $request, League $league, string $itemId): JsonResponse
     {
-        $this->authorizeLeagueMember($request->user(), $league);
+        $this->authorize('useItems', $league);
 
         $validated = $request->validate([
             'target_user_id' => ['required', 'uuid', 'exists:users,id'],
@@ -57,7 +58,7 @@ class ItemController extends Controller
         ];
 
         // For spy items, include the spy data
-        if ($userItem->item->type === \App\Enums\ItemType::Strategic) {
+        if ($userItem->item->type === ItemType::Strategic) {
             $spyData = $this->itemService->handleSpyItem($userItem, $target, $league);
             if ($spyData) {
                 $response['spy_data'] = $spyData;
@@ -65,12 +66,5 @@ class ItemController extends Controller
         }
 
         return response()->json($response);
-    }
-
-    private function authorizeLeagueMember(\App\Models\User $user, League $league): void
-    {
-        if (! $league->members()->where('user_id', $user->id)->exists()) {
-            abort(403, 'You are not a member of this league.');
-        }
     }
 }

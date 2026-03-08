@@ -6,6 +6,7 @@ use App\Models\League;
 use App\Models\Notification;
 use App\Models\User;
 use Berkayk\OneSignal\OneSignalFacade as OneSignal;
+use Illuminate\Support\Facades\Log;
 
 class NotificationService
 {
@@ -51,8 +52,11 @@ class NotificationService
                 userId: $user->onesignal_player_id,
                 data: $data,
             );
-        } catch (\Throwable) {
-            // Silently fail push notifications
+        } catch (\Throwable $e) {
+            Log::error('OneSignal push notification failed', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 
@@ -63,8 +67,10 @@ class NotificationService
                 message: '',
                 data: ['sync_type' => 'steps'],
             );
-        } catch (\Throwable) {
-            // Silently fail
+        } catch (\Throwable $e) {
+            Log::error('OneSignal silent push failed', [
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 }
