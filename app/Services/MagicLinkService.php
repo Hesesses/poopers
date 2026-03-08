@@ -46,7 +46,7 @@ class MagicLinkService
 
         $magicLink->update(['used_at' => now()]);
 
-        return User::query()->firstOrCreate(
+        return User::query()->updateOrCreate(
             ['email' => $magicLink->email],
             [
                 'first_name' => $magicLink->first_name ?? '',
