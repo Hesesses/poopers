@@ -14,9 +14,9 @@ return new class extends Migration
             $table->string('first_name');
             $table->string('last_name');
             $table->string('avatar')->nullable();
-            $table->boolean('is_pro')->default(false);
-            $table->timestamp('pro_expires_at')->nullable();
-            $table->string('onesignal_player_id')->nullable();
+            $table->boolean('is_pro')->default(false)->index();
+            $table->timestamp('pro_expires_at')->nullable()->index();
+            $table->string('onesignal_player_id')->nullable()->index();
             $table->json('notification_settings')->nullable();
             $table->timestamps();
             $table->softDeletes();

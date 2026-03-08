@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('user_item_id')->constrained();
             $table->foreignId('target_user_id')->constrained('users');
             $table->foreignId('league_id')->constrained();
-            $table->date('date');
+            $table->date('date')->index();
             $table->tinyInteger('status');
             $table->foreignId('blocked_by_item_id')->nullable()->constrained('items');
             $table->timestamps();

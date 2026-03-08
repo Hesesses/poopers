@@ -25,7 +25,7 @@ class StepSyncService
 
         $existing = DailySteps::query()
             ->where('user_id', $user->id)
-            ->where('date', $date)
+            ->whereDate('date', $date)
             ->first();
 
         if (config('anticheat.enabled')) {
@@ -48,10 +48,15 @@ class StepSyncService
             $updateData['hourly_steps'] = $hourlySteps;
         }
 
-        $dailySteps = DailySteps::query()->updateOrCreate(
-            ['user_id' => $user->id, 'date' => $date],
-            $updateData,
-        );
+        if ($existing) {
+            $existing->update($updateData);
+            $dailySteps = $existing;
+        } else {
+            $dailySteps = DailySteps::create(array_merge(
+                ['user_id' => $user->id, 'date' => $date],
+                $updateData,
+            ));
+        }
 
         $this->recalculateModifiedSteps($user, $date);
 
@@ -62,7 +67,7 @@ class StepSyncService
     {
         $dailySteps = DailySteps::query()
             ->where('user_id', $user->id)
-            ->where('date', $date)
+            ->whereDate('date', $date)
             ->first();
 
         if (! $dailySteps) {

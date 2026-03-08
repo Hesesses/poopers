@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('league_id')->constrained();
             $table->tinyInteger('type');
             $table->string('name')->nullable();
-            $table->date('date');
+            $table->date('date')->index();
             $table->json('available_items');
             $table->json('pick_order');
             $table->integer('current_pick_index')->default(0);

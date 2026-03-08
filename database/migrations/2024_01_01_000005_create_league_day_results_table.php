@@ -12,10 +12,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('league_id')->constrained()->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->date('date');
-            $table->integer('steps');
-            $table->integer('modified_steps');
-            $table->integer('position');
+            $table->date('date')->index();
+            $table->integer('steps')->index();
+            $table->integer('modified_steps')->index();
+            $table->integer('position')->index();
             $table->boolean('is_winner')->default(false);
             $table->boolean('is_last')->default(false);
             $table->timestamps();

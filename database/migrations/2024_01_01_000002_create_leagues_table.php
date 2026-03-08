@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('timezone')->default('UTC');
             $table->string('invite_code', 10)->unique();
             $table->foreignId('created_by')->constrained('users');
-            $table->boolean('is_pro_league')->default(false);
+            $table->boolean('is_pro_league')->default(false)->index();
             $table->timestamps();
             $table->softDeletes();
         });

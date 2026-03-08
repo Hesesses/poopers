@@ -10,11 +10,11 @@ return new class extends Migration
     {
         Schema::create('magic_links', function (Blueprint $table) {
             $table->id();
-            $table->string('email');
+            $table->string('email')->index();
             $table->string('first_name')->nullable();
             $table->string('last_name')->nullable();
             $table->string('token', 64)->unique();
-            $table->timestamp('expires_at');
+            $table->timestamp('expires_at')->index();
             $table->timestamp('used_at')->nullable();
             $table->timestamps();
 

@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('daily_steps', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->date('date');
+            $table->date('date')->index();
             $table->integer('steps')->default(0);
             $table->integer('modified_steps')->default(0);
             $table->timestamp('last_synced_at');
