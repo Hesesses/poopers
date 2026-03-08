@@ -63,29 +63,4 @@ class AuthController extends Controller
 
         return response()->json(['message' => 'Account deleted successfully.']);
     }
-
-    public function debugLogin(Request $request): JsonResponse
-    {
-        $request->validate(['email' => ['required', 'email']]);
-
-        $magicLink = \App\Models\MagicLink::query()
-            ->where('email', $request->email)
-            ->latest()
-            ->first();
-
-        $user = \App\Models\User::query()->firstOrCreate(
-            ['email' => $request->email],
-            [
-                'first_name' => $magicLink?->first_name ?? '',
-                'last_name' => $magicLink?->last_name ?? '',
-            ],
-        );
-
-        $token = $user->createToken('mobile')->plainTextToken;
-
-        return response()->json([
-            'user' => new UserResource($user),
-            'token' => $token,
-        ]);
-    }
 }

@@ -17,10 +17,6 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('auth')->group(function () {
     Route::post('/magic-link', [AuthController::class, 'sendMagicLink']);
     Route::post('/verify', [AuthController::class, 'verify']);
-
-    if (app()->environment('local')) {
-        Route::post('/debug-login', [AuthController::class, 'debugLogin']);
-    }
 });
 
 // Authenticated routes
