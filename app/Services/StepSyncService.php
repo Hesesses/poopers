@@ -62,10 +62,8 @@ class StepSyncService
 
         $this->recalculateModifiedSteps($user, $date);
 
-        // Auto-calculate results for past dates
-        if ($date !== now()->toDateString()) {
-            $this->calculateResultsForUserDate($user, $date);
-        }
+        // Auto-calculate results for past dates (checked per-league timezone)
+        $this->calculateResultsForUserDate($user, $date);
 
         return $dailySteps->fresh();
     }
@@ -149,6 +147,12 @@ class StepSyncService
         $leagues = $user->leagues()->with('members')->get();
 
         foreach ($leagues as $league) {
+            $leagueToday = now()->setTimezone($league->timezone)->toDateString();
+
+            if ($date === $leagueToday) {
+                continue;
+            }
+
             $this->dailyResultService->calculateForLeague($league, $date, awardItems: false, recalculate: true);
         }
     }
