@@ -159,7 +159,7 @@ class LeagueService
 
     private function validateFreeUserLeagueLimit(User $user): void
     {
-        if (! $user->isPro() && $user->leagues()->count() >= 1) {
+        if (! $user->isPro() && $user->leagues()->count() >= 3) {
             throw ValidationException::withMessages([
                 'league' => 'Free users can only be in 1 league. Upgrade to PRO for unlimited leagues.',
             ]);
