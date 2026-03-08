@@ -18,6 +18,12 @@ class UserResource extends JsonResource
             'avatar' => $this->avatar,
             'is_pro' => $this->isPro(),
             'created_at' => $this->created_at?->toIso8601String(),
+            'notification_settings' => $this->notification_settings ?? [
+                'push_enabled' => true,
+                'daily_results' => true,
+                'draft_reminders' => true,
+                'attack_alerts' => true,
+            ],
         ];
     }
 }

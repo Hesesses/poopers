@@ -38,7 +38,7 @@ class UserController extends Controller
     public function updateSettings(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'notification_settings' => ['required', 'array'],
+            'notification_settings' => ['sometimes', 'array'],
             'notification_settings.push_enabled' => ['boolean'],
             'notification_settings.daily_results' => ['boolean'],
             'notification_settings.draft_reminders' => ['boolean'],
