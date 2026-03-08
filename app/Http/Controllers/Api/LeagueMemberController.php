@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\LeagueMemberResource;
+use App\Http\Resources\LeagueResource;
 use App\Models\League;
 use App\Models\User;
 use App\Services\LeagueService;
@@ -15,6 +16,21 @@ class LeagueMemberController extends Controller
     public function __construct(
         private LeagueService $leagueService,
     ) {}
+
+    public function joinByCode(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'invite_code' => ['required', 'string'],
+        ]);
+
+        $league = League::query()
+            ->where('invite_code', $validated['invite_code'])
+            ->firstOrFail();
+
+        $this->leagueService->join($request->user(), $league, $validated['invite_code']);
+
+        return response()->json(new LeagueResource($league->load('members')));
+    }
 
     public function index(Request $request, League $league): JsonResponse
     {

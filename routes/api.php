@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AttestController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DraftController;
 use App\Http\Controllers\Api\InviteCodeController;
@@ -8,7 +9,6 @@ use App\Http\Controllers\Api\LeagueController;
 use App\Http\Controllers\Api\LeagueMemberController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\StandingsController;
-use App\Http\Controllers\Api\AttestController;
 use App\Http\Controllers\Api\SyncController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
@@ -44,6 +44,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/leagues/{league}', [LeagueController::class, 'destroy']);
 
     // League Members
+    Route::post('/leagues/join', [LeagueMemberController::class, 'joinByCode']);
     Route::get('/leagues/{league}/members', [LeagueMemberController::class, 'index']);
     Route::post('/leagues/{league}/join', [LeagueMemberController::class, 'join']);
     Route::post('/leagues/{league}/leave', [LeagueMemberController::class, 'leave']);
