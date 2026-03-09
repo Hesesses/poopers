@@ -78,10 +78,20 @@ class User extends Authenticatable
         return $this->hasMany(DeviceAttestation::class);
     }
 
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
     public function isPro(): bool
     {
-        return $this->is_pro
-            && ($this->pro_expires_at === null || $this->pro_expires_at->isFuture());
+        return $this->subscriptions()
+            ->where('status', 'active')
+            ->where(function ($query) {
+                $query->whereNull('current_period_end')
+                    ->orWhere('current_period_end', '>', now());
+            })
+            ->exists();
     }
 
     public function getFullNameAttribute(): string

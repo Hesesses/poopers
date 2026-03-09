@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\LeagueController;
 use App\Http\Controllers\Api\LeagueMemberController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\StandingsController;
+use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\SyncController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
@@ -79,8 +80,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/attest/challenge', [AttestController::class, 'challenge']);
     Route::post('/attest/register', [AttestController::class, 'register']);
 
+    // Subscription
+    Route::post('/subscription/verify', [SubscriptionController::class, 'verify']);
+
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications/read', [NotificationController::class, 'markAsRead']);
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
 });
+
+// Apple App Store Server Notifications (public, no auth)
+Route::post('/subscription/webhook', [SubscriptionController::class, 'webhook']);

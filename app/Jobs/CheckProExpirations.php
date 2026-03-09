@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\LeagueMember;
+use App\Models\Subscription;
 use App\Models\User;
 use App\Services\NotificationService;
 use Illuminate\Bus\Queueable;
@@ -17,16 +18,22 @@ class CheckProExpirations implements ShouldQueue
 
     public function handle(NotificationService $notificationService): void
     {
-        // Find users whose PRO has expired
+        // Mark expired subscriptions
+        Subscription::query()
+            ->where('status', 'active')
+            ->whereNotNull('current_period_end')
+            ->where('current_period_end', '<', now())
+            ->update(['status' => 'expired']);
+
+        // Find users who were pro but no longer have active subscriptions
         $expiredUsers = User::query()
-            ->where('is_pro', true)
-            ->whereNotNull('pro_expires_at')
-            ->where('pro_expires_at', '<', now())
+            ->whereHas('subscriptions', fn ($q) => $q->where('status', 'expired'))
+            ->whereDoesntHave('subscriptions', fn ($q) => $q->where('status', 'active')
+                ->where(fn ($q2) => $q2->whereNull('current_period_end')->orWhere('current_period_end', '>', now()))
+            )
             ->get();
 
         foreach ($expiredUsers as $user) {
-            $user->update(['is_pro' => false]);
-
             // Remove from 6+ member leagues
             $proLeagueMembers = LeagueMember::query()
                 ->where('user_id', $user->id)
@@ -45,7 +52,6 @@ class CheckProExpirations implements ShouldQueue
 
                 $member->delete();
 
-                // Check if league should be downgraded
                 if ($member->league->memberCount() < 6) {
                     $member->league->update(['is_pro_league' => false]);
                 }
