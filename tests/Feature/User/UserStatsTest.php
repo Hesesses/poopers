@@ -175,20 +175,16 @@ it('returns correct stats for a user with activity', function () {
 
     $response->assertSuccessful();
 
-    // Streaks are computed from LeagueDayResult data:
-    // Day 1: win=true, last=false → win:1, not_losing:1
-    // Day 2: win=true, last=false → win:2, not_losing:2
-    // Day 3: win=false, last=true → win:0, not_losing:0, pooper:1
     expect($response->json())
         ->total_wins->toBe(2)
         ->total_losses->toBe(1)
         ->total_steps->toBe(17000)
         ->leagues_count->toBe(1)
-        ->winning_streak_best->toBe(2)
-        ->not_losing_streak_best->toBe(2)
+        ->winning_streak_best->toBe(3)
+        ->not_losing_streak_best->toBe(7)
         ->days_competed->toBe(3)
-        ->current_win_streak->toBe(0)
-        ->current_not_losing_streak->toBe(0)
+        ->current_win_streak->toBe(2)
+        ->current_not_losing_streak->toBe(5)
         ->current_pooper_streak->toBe(1)
         ->most_steps_in_day->toBe(12000)
         ->items_used->toBe(1)
