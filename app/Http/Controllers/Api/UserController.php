@@ -16,7 +16,9 @@ class UserController extends Controller
 
     public function stats(Request $request): JsonResponse
     {
-        $stats = $this->userStatsService->getStats($request->user());
+        $leagueId = $request->integer('league_id') ?: null;
+
+        $stats = $this->userStatsService->getStats($request->user(), $leagueId);
 
         return response()->json($stats);
     }

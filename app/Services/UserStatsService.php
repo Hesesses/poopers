@@ -13,7 +13,7 @@ class UserStatsService
     /**
      * @return array{total_wins: int, total_losses: int, total_steps: int, leagues_count: int, winning_streak_best: int, not_losing_streak_best: int, days_competed: int, current_win_streak: int, current_not_losing_streak: int, current_pooper_streak: int, most_steps_in_day: int, items_used: int, attacks_sent: int, attacks_blocked: int}
      */
-    public function getStats(User $user): array
+    public function getStats(User $user, ?int $leagueId = null): array
     {
         $signupDate = $user->created_at->toDateString();
 
@@ -21,12 +21,14 @@ class UserStatsService
             ->where('user_id', $user->id)
             ->where('date', '>=', $signupDate)
             ->where('is_winner', true)
+            ->when($leagueId, fn ($q) => $q->where('league_id', $leagueId))
             ->count();
 
         $losses = LeagueDayResult::query()
             ->where('user_id', $user->id)
             ->where('date', '>=', $signupDate)
             ->where('is_last', true)
+            ->when($leagueId, fn ($q) => $q->where('league_id', $leagueId))
             ->count();
 
         $totalSteps = $user->dailySteps()
@@ -35,41 +37,54 @@ class UserStatsService
 
         $bestWinningStreak = $user->streaks()
             ->where('type', StreakType::Winning)
+            ->when($leagueId, fn ($q) => $q->where('league_id', $leagueId))
             ->max('best_count') ?? 0;
 
         $bestNotLosingStreak = $user->streaks()
             ->where('type', StreakType::NotLosing)
+            ->when($leagueId, fn ($q) => $q->where('league_id', $leagueId))
             ->max('best_count') ?? 0;
 
         $daysCompeted = LeagueDayResult::query()
             ->where('user_id', $user->id)
             ->where('date', '>=', $signupDate)
+            ->when($leagueId, fn ($q) => $q->where('league_id', $leagueId))
             ->distinct('date')
             ->count('date');
 
         $currentWinStreak = $user->streaks()
             ->where('type', StreakType::Winning)
+            ->when($leagueId, fn ($q) => $q->where('league_id', $leagueId))
             ->max('current_count') ?? 0;
 
         $currentNotLosingStreak = $user->streaks()
             ->where('type', StreakType::NotLosing)
+            ->when($leagueId, fn ($q) => $q->where('league_id', $leagueId))
             ->max('current_count') ?? 0;
 
         $currentPooperStreak = $user->streaks()
             ->where('type', StreakType::Pooper)
+            ->when($leagueId, fn ($q) => $q->where('league_id', $leagueId))
             ->max('current_count') ?? 0;
 
         $mostStepsInDay = $user->dailySteps()
             ->where('date', '>=', $signupDate)
             ->max('steps') ?? 0;
 
-        $itemsUsed = $user->items()->whereNotNull('used_at')->count();
+        $itemsUsed = $user->items()
+            ->whereNotNull('used_at')
+            ->when($leagueId, fn ($q) => $q->where('league_id', $leagueId))
+            ->count();
 
-        $attacksSent = ItemEffect::whereHas('userItem', fn ($q) => $q->where('user_id', $user->id))->count();
+        $attacksSent = ItemEffect::query()
+            ->whereHas('userItem', fn ($q) => $q->where('user_id', $user->id))
+            ->when($leagueId, fn ($q) => $q->where('league_id', $leagueId))
+            ->count();
 
         $attacksBlocked = ItemEffect::query()
             ->where('target_user_id', $user->id)
             ->where('status', ItemEffectStatus::Blocked)
+            ->when($leagueId, fn ($q) => $q->where('league_id', $leagueId))
             ->count();
 
         return [
