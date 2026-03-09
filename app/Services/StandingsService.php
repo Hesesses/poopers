@@ -2,7 +2,10 @@
 
 namespace App\Services;
 
+use App\Enums\ItemEffectStatus;
+use App\Enums\ItemEffectType;
 use App\Models\DailySteps;
+use App\Models\ItemEffect;
 use App\Models\League;
 use App\Models\LeagueDayResult;
 use App\Models\Streak;
@@ -48,7 +51,7 @@ class StandingsService
     /**
      * Get today's live data with visibility rules based on league timezone.
      *
-     * @return array{standings: Collection, visibility: string, snapshot_time: ?string}
+     * @return array{standings: Collection, visibility: string, league_time: string, streaks: Collection}
      */
     public function getToday(League $league, User $currentUser): array
     {
@@ -65,8 +68,13 @@ class StandingsService
             ->get()
             ->keyBy('user_id');
 
-        $standings = $members->map(function (User $member) use ($steps, $currentUser, $visibility) {
+        // Load active item effects for visibility modifications
+        $activeEffects = $this->getActiveEffects($league->id, $today);
+
+        $standings = $members->map(function (User $member) use ($steps, $currentUser, $visibility, $activeEffects) {
             $memberSteps = $steps->get($member->id);
+            $realSteps = $memberSteps?->steps ?? 0;
+            $realModifiedSteps = $memberSteps?->modified_steps ?? 0;
 
             $showSteps = match ($visibility) {
                 'own_only' => $member->id === $currentUser->id,
@@ -76,14 +84,39 @@ class StandingsService
 
             $showPositions = $visibility !== 'own_only';
 
+            // Toilet Paper Trail: expose target's steps to everyone
+            if ($this->hasEffect($activeEffects, $member->id, ItemEffectType::ExposeSteps)) {
+                $showSteps = true;
+            }
+
+            // The Brown Out: hide position from target
+            if ($member->id === $currentUser->id && $this->hasEffect($activeEffects, $currentUser->id, ItemEffectType::HideRanking)) {
+                $showPositions = false;
+            }
+
+            // Fake Poop: show fake steps to others
+            $displaySteps = $realSteps;
+            $displayModifiedSteps = $realModifiedSteps;
+            if ($member->id !== $currentUser->id && $this->hasEffectOnSelf($activeEffects, $member->id, ItemEffectType::FakeSteps)) {
+                $variance = 30;
+                $fakeMultiplier = 1 + (random_int(-$variance, $variance) / 100);
+                $displaySteps = (int) round($realSteps * $fakeMultiplier);
+                $displayModifiedSteps = (int) round($realModifiedSteps * $fakeMultiplier);
+            }
+
+            // Odor Shield: hide steps from specific attackers
+            if ($member->id !== $currentUser->id && $this->isHiddenFromUser($activeEffects, $member->id, $currentUser->id)) {
+                $showSteps = false;
+            }
+
             return (object) [
                 'user' => $member,
-                'steps' => $showSteps ? ($memberSteps?->steps ?? 0) : null,
-                'modified_steps' => $showSteps ? ($memberSteps?->modified_steps ?? 0) : null,
+                'steps' => $showSteps ? $displaySteps : null,
+                'modified_steps' => $showSteps ? $displayModifiedSteps : null,
                 'show_steps' => $showSteps,
                 'show_positions' => $showPositions,
                 'is_self' => $member->id === $currentUser->id,
-                'own_steps' => $member->id === $currentUser->id ? ($memberSteps?->steps ?? 0) : null,
+                'own_steps' => $member->id === $currentUser->id ? $realSteps : null,
             ];
         })->sortByDesc(fn ($s) => $s->modified_steps ?? 0)->values();
 
@@ -154,5 +187,59 @@ class StandingsService
         }
 
         return 'positions_only';
+    }
+
+    /**
+     * @return Collection<int, ItemEffect>
+     */
+    private function getActiveEffects(string $leagueId, string $date): Collection
+    {
+        return ItemEffect::query()
+            ->where('league_id', $leagueId)
+            ->where('date', $date)
+            ->where('status', ItemEffectStatus::Applied)
+            ->with('userItem.item', 'userItem')
+            ->get();
+    }
+
+    /**
+     * @param  Collection<int, ItemEffect>  $effects
+     */
+    private function hasEffect(Collection $effects, string $targetUserId, ItemEffectType $type): bool
+    {
+        return $effects->contains(function (ItemEffect $effect) use ($targetUserId, $type) {
+            return $effect->target_user_id === $targetUserId
+                && ItemEffectType::tryFrom($effect->userItem->item->effect['type'] ?? '') === $type;
+        });
+    }
+
+    /**
+     * Check if user has an effect they placed on themselves.
+     *
+     * @param  Collection<int, ItemEffect>  $effects
+     */
+    private function hasEffectOnSelf(Collection $effects, string $userId, ItemEffectType $type): bool
+    {
+        return $effects->contains(function (ItemEffect $effect) use ($userId, $type) {
+            return $effect->target_user_id === $userId
+                && $effect->userItem->user_id === $userId
+                && ItemEffectType::tryFrom($effect->userItem->item->effect['type'] ?? '') === $type;
+        });
+    }
+
+    /**
+     * Check if a user's steps are hidden from a specific viewer (Odor Shield).
+     *
+     * @param  Collection<int, ItemEffect>  $effects
+     */
+    private function isHiddenFromUser(Collection $effects, string $targetUserId, string $viewerUserId): bool
+    {
+        return $effects->contains(function (ItemEffect $effect) use ($viewerUserId) {
+            $type = ItemEffectType::tryFrom($effect->userItem->item->effect['type'] ?? '');
+
+            // Odor Shield creates effects where target_user_id is the attacker to hide from
+            return $type === ItemEffectType::HideStepsFromAttacker
+                && $effect->target_user_id === $viewerUserId;
+        });
     }
 }

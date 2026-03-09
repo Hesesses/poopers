@@ -8,4 +8,8 @@ enum ItemEffectStatus: int
     case Applied = 2;
     case Blocked = 3;
     case Reflected = 4;
+    case Missed = 5;
+    case Expired = 6;
+    case Consumed = 7;
+    case Cancelled = 8;
 }

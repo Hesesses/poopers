@@ -84,6 +84,7 @@ class StepSyncService
 
         $modifiedSteps = $dailySteps->steps;
 
+        // Get all effects targeting this user for this date
         $effects = ItemEffect::query()
             ->where('target_user_id', $user->id)
             ->where('date', $date)
@@ -92,10 +93,10 @@ class StepSyncService
             ->get();
 
         foreach ($effects as $effect) {
-            $modifiedSteps = $this->applyEffect($modifiedSteps, $effect);
+            $modifiedSteps = $this->applyEffect($modifiedSteps, $effect, $dailySteps);
         }
 
-        // Also apply self-boost effects
+        // Also apply self-boost effects (where user is both owner and target)
         $boostEffects = ItemEffect::query()
             ->whereHas('userItem', fn ($q) => $q->where('user_id', $user->id))
             ->where('target_user_id', $user->id)
@@ -106,14 +107,14 @@ class StepSyncService
 
         foreach ($boostEffects as $effect) {
             if (! $effects->contains($effect)) {
-                $modifiedSteps = $this->applyEffect($modifiedSteps, $effect);
+                $modifiedSteps = $this->applyEffect($modifiedSteps, $effect, $dailySteps);
             }
         }
 
         $dailySteps->update(['modified_steps' => max(0, $modifiedSteps)]);
     }
 
-    private function applyEffect(int $steps, ItemEffect $effect): int
+    private function applyEffect(int $steps, ItemEffect $effect, DailySteps $dailySteps): int
     {
         $item = $effect->userItem->item;
         $effectData = $item->effect;
@@ -123,6 +124,8 @@ class StepSyncService
         return match ($type) {
             ItemEffectType::ReduceSteps => $this->applyReduction($steps, $effectData),
             ItemEffectType::BoostSteps => $this->applyBoost($steps, $effectData),
+            ItemEffectType::StealSteps => $this->applyReduction($steps, $effectData),
+            ItemEffectType::TimedBoost => $this->applyTimedBoost($steps, $effectData, $dailySteps),
             default => $steps,
         };
     }
@@ -143,6 +146,22 @@ class StepSyncService
         }
 
         return $steps + ($effectData['value'] ?? 0);
+    }
+
+    private function applyTimedBoost(int $steps, array $effectData, DailySteps $dailySteps): int
+    {
+        $hourlySteps = $dailySteps->hourly_steps ?? [];
+        $beforeHour = $effectData['before_hour'] ?? 12;
+        $morningSteps = 0;
+
+        for ($i = 0; $i < $beforeHour; $i++) {
+            $morningSteps += $hourlySteps[$i] ?? 0;
+        }
+
+        $multiplier = ($effectData['multiplier'] ?? 1.1) - 1.0;
+        $bonus = (int) round($morningSteps * $multiplier);
+
+        return $steps + $bonus;
     }
 
     private function calculateResultsForUserDate(User $user, string $date): void

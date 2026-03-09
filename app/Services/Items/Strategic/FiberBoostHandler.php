@@ -1,0 +1,41 @@
+<?php
+
+namespace App\Services\Items\Strategic;
+
+use App\Models\ItemEffect;
+use App\Models\League;
+use App\Models\User;
+use App\Models\UserItem;
+use App\Services\Items\BaseItemHandler;
+
+class FiberBoostHandler extends BaseItemHandler
+{
+    public function requiresTarget(): bool
+    {
+        return false;
+    }
+
+    public function allowsSelfTarget(): bool
+    {
+        return true;
+    }
+
+    public function execute(UserItem $userItem, User $user, ?User $target, League $league): ItemEffect
+    {
+        $effect = $this->createEffect($userItem, $user, $league);
+        $this->recalculateSteps($user);
+
+        return $effect;
+    }
+
+    public function hasMidnightResolution(): bool
+    {
+        return true;
+    }
+
+    public function resolveAtMidnight(ItemEffect $effect, League $league): void
+    {
+        $user = User::find($effect->target_user_id);
+        $this->recalculateSteps($user, $effect->date);
+    }
+}

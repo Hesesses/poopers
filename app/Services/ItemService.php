@@ -3,28 +3,35 @@
 namespace App\Services;
 
 use App\Enums\ItemEffectStatus;
-use App\Enums\ItemEffectType;
 use App\Enums\ItemRarity;
 use App\Enums\ItemSource;
 use App\Enums\ItemType;
+use App\Exceptions\InventoryFullException;
 use App\Exceptions\ItemAlreadyUsedTodayException;
 use App\Exceptions\ItemWindowClosedException;
+use App\Exceptions\ProRequiredException;
 use App\Models\Item;
 use App\Models\ItemEffect;
 use App\Models\League;
 use App\Models\User;
 use App\Models\UserItem;
+use App\Services\Items\ItemHandlerRegistry;
 
 class ItemService
 {
     public function __construct(
         private NotificationService $notificationService,
         private StepSyncService $stepSyncService,
+        private ItemHandlerRegistry $registry,
     ) {}
 
-    public function useItem(UserItem $userItem, User $user, User $target, League $league): ItemEffect
+    /**
+     * @return array{effect: ItemEffect, response_data: ?array<string, mixed>}
+     */
+    public function useItem(UserItem $userItem, User $user, ?User $target, League $league): array
     {
         $item = $userItem->item;
+        $handler = $this->registry->resolve($item);
 
         // Validate not already used
         if ($userItem->isUsed()) {
@@ -36,18 +43,28 @@ class ItemService
             throw new ItemAlreadyUsedTodayException('This item has expired.');
         }
 
-        // Check if user already used an item today in this league
-        $usedToday = UserItem::query()
-            ->where('user_id', $user->id)
-            ->where('league_id', $league->id)
-            ->whereNotNull('used_at')
-            ->whereDate('used_at', now()->toDateString())
-            ->where('id', '!=', $userItem->id)
-            ->exists();
+        // Check daily limit (unless handler bypasses it)
+        if (! $handler->bypassesDailyLimit()) {
+            $usedToday = UserItem::query()
+                ->where('user_id', $user->id)
+                ->where('league_id', $league->id)
+                ->whereNotNull('used_at')
+                ->whereDate('used_at', now()->toDateString())
+                ->where('id', '!=', $userItem->id)
+                ->exists();
 
-        if ($usedToday) {
-            throw new ItemAlreadyUsedTodayException('You can only use 1 item per day.');
+            if ($usedToday) {
+                throw new ItemAlreadyUsedTodayException('You can only use 1 item per day.');
+            }
         }
+
+        // PRO gating: Rare+ requires Pro
+        if (in_array($item->rarity, [ItemRarity::Rare, ItemRarity::Epic, ItemRarity::Legendary]) && ! $user->isPro()) {
+            throw new ProRequiredException('This item requires a Pro subscription.');
+        }
+
+        // Inventory limit check
+        $this->checkInventoryLimit($user, $league);
 
         // Check offense window (before 18:00 league time)
         if ($item->type === ItemType::Offensive) {
@@ -57,158 +74,53 @@ class ItemService
             }
         }
 
+        // Target validation
+        if ($handler->requiresTarget() && ! $target) {
+            throw new ItemAlreadyUsedTodayException('This item requires a target.');
+        }
+
+        if (! $handler->allowsSelfTarget() && $target && $target->id === $user->id) {
+            throw new ItemAlreadyUsedTodayException('You cannot use this item on yourself.');
+        }
+
+        // For self-target items, set target to user
+        if (! $handler->requiresTarget()) {
+            $target = $user;
+        }
+
+        // Check for Porta-Potty Trap on user
+        $trapTriggered = $this->checkTrap($user, $league);
+        if ($trapTriggered) {
+            $userItem->update(['used_at' => now()]);
+
+            throw new ItemAlreadyUsedTodayException('A trap was triggered! Your item failed and you lost 5% steps.');
+        }
+
+        // Check for Clogged Pipes on user
+        if ($this->hasActiveBlock($user, $league)) {
+            throw new ItemAlreadyUsedTodayException('Your items are blocked!');
+        }
+
+        // Custom handler validation
+        $handler->validate($userItem, $user, $target, $league);
+
         // Mark item as used
         $userItem->update([
             'used_at' => now(),
-            'used_on_user_id' => $target->id,
+            'used_on_user_id' => $target?->id,
         ]);
 
-        // Create effect
-        $effect = ItemEffect::query()->create([
-            'user_item_id' => $userItem->id,
-            'target_user_id' => $target->id,
-            'league_id' => $league->id,
-            'date' => now()->toDateString(),
-            'status' => ItemEffectStatus::Pending,
-        ]);
+        // Execute handler
+        $effect = $handler->execute($userItem, $user, $target, $league);
+        $responseData = $handler->getResponseData($effect);
 
-        // Handle item type logic
-        if ($item->type === ItemType::Offensive) {
-            $effect = $this->handleOffensiveItem($effect, $userItem, $target, $league);
-        } elseif ($item->type === ItemType::Defensive) {
-            $effect = $this->handleDefensiveItem($effect, $userItem, $user);
-        } elseif ($item->type === ItemType::Strategic) {
-            $effect = $this->handleStrategicItem($effect, $userItem, $user, $target, $league);
-        }
+        // Send notifications
+        $this->sendNotifications($handler, $effect, $user, $target, $league);
 
-        return $effect;
-    }
-
-    private function handleOffensiveItem(ItemEffect $effect, UserItem $userItem, User $target, League $league): ItemEffect
-    {
-        // Check for defensive items on target
-        $blocked = $this->checkDefensiveItems($effect, $target, $league);
-
-        if (! $blocked) {
-            $effect->update(['status' => ItemEffectStatus::Applied]);
-            $this->stepSyncService->recalculateModifiedSteps($target, now()->toDateString());
-        }
-
-        // Notify target
-        $this->notificationService->create(
-            $target,
-            $league,
-            'attack_received',
-            'You were attacked!',
-            "{$userItem->user->full_name} used {$userItem->item->name} on you!",
-        );
-
-        return $effect->fresh();
-    }
-
-    private function handleDefensiveItem(ItemEffect $effect, UserItem $userItem, User $user): ItemEffect
-    {
-        $effect->update(['status' => ItemEffectStatus::Applied]);
-
-        return $effect->fresh();
-    }
-
-    /**
-     * @return array{steps: ?int, inventory: ?array<mixed>}|null
-     */
-    private function handleStrategicItem(ItemEffect $effect, UserItem $userItem, User $user, User $target, League $league): ItemEffect
-    {
-        $effect->update(['status' => ItemEffectStatus::Applied]);
-
-        return $effect->fresh();
-    }
-
-    /**
-     * @return array{steps: ?int}|null
-     */
-    public function handleSpyItem(UserItem $userItem, User $target, League $league): ?array
-    {
-        $item = $userItem->item;
-        $effectType = $item->effect['type'] ?? null;
-
-        $enumType = ItemEffectType::tryFrom($effectType);
-
-        return match ($enumType) {
-            ItemEffectType::SpySingle => ['steps' => $target->dailySteps()->where('date', now()->toDateString())->value('steps')],
-            ItemEffectType::SpyInventory => [
-                'inventory' => UserItem::query()
-                    ->where('league_id', $league->id)
-                    ->whereNull('used_at')
-                    ->where('expires_at', '>', now())
-                    ->with(['item', 'user'])
-                    ->get()
-                    ->groupBy('user_id')
-                    ->toArray(),
-            ],
-            default => null,
-        };
-    }
-
-    private function checkDefensiveItems(ItemEffect $effect, User $target, League $league, int $depth = 0): bool
-    {
-        $today = now()->toDateString();
-
-        // Check for active defensive effects on target
-        $defensiveEffects = ItemEffect::query()
-            ->whereHas('userItem', function ($q) use ($target, $league) {
-                $q->where('user_id', $target->id)
-                    ->where('league_id', $league->id)
-                    ->whereHas('item', fn ($iq) => $iq->where('type', ItemType::Defensive));
-            })
-            ->where('date', $today)
-            ->where('status', ItemEffectStatus::Applied)
-            ->with('userItem.item')
-            ->get();
-
-        foreach ($defensiveEffects as $defEffect) {
-            $defItem = $defEffect->userItem->item;
-            $defEffectType = $defItem->effect['type'] ?? null;
-
-            $defEnumType = ItemEffectType::tryFrom($defEffectType);
-
-            if ($defEnumType === ItemEffectType::BlockAttack || $defEnumType === ItemEffectType::BlockAllAttacks) {
-                $effect->update([
-                    'status' => ItemEffectStatus::Blocked,
-                    'blocked_by_item_id' => $defEffect->userItem->item_id,
-                ]);
-
-                // Single-use block is consumed
-                if ($defEnumType === ItemEffectType::BlockAttack) {
-                    $defEffect->update(['status' => ItemEffectStatus::Blocked]);
-                }
-
-                return true;
-            }
-
-            if ($defEnumType === ItemEffectType::ReflectAttack && $depth < 1) {
-                $effect->update([
-                    'status' => ItemEffectStatus::Reflected,
-                    'blocked_by_item_id' => $defEffect->userItem->item_id,
-                ]);
-
-                // Apply the attack to the original attacker
-                $attacker = $effect->userItem->user;
-                ItemEffect::query()->create([
-                    'user_item_id' => $effect->user_item_id,
-                    'target_user_id' => $attacker->id,
-                    'league_id' => $league->id,
-                    'date' => $today,
-                    'status' => ItemEffectStatus::Applied,
-                ]);
-
-                $this->stepSyncService->recalculateModifiedSteps($attacker, $today);
-                $defEffect->update(['status' => ItemEffectStatus::Blocked]);
-
-                return true;
-            }
-        }
-
-        return false;
+        return [
+            'effect' => $effect,
+            'response_data' => $responseData,
+        ];
     }
 
     public function awardRandomItem(User $user, League $league, ItemSource $source): UserItem
@@ -222,6 +134,110 @@ class ItemService
             'source' => $source,
             'expires_at' => now()->addDays(7),
         ]);
+    }
+
+    private function checkInventoryLimit(User $user, League $league): void
+    {
+        $unusedCount = UserItem::query()
+            ->where('user_id', $user->id)
+            ->where('league_id', $league->id)
+            ->whereNull('used_at')
+            ->where('expires_at', '>', now())
+            ->count();
+
+        $limit = $user->isPro() ? 10 : 3;
+
+        if ($unusedCount > $limit) {
+            throw new InventoryFullException("Inventory full ({$limit} items max).");
+        }
+    }
+
+    private function checkTrap(User $user, League $league): bool
+    {
+        $trap = ItemEffect::query()
+            ->where('target_user_id', $user->id)
+            ->where('league_id', $league->id)
+            ->where('date', now()->toDateString())
+            ->where('status', ItemEffectStatus::Applied)
+            ->whereHas('userItem.item', function ($q) {
+                $q->whereJsonContains('effect->type', 'set_trap');
+            })
+            ->first();
+
+        if (! $trap) {
+            return false;
+        }
+
+        // Trap triggered: consume it and apply -5% penalty
+        $trap->update(['status' => ItemEffectStatus::Consumed]);
+        $this->stepSyncService->recalculateModifiedSteps($user, now()->toDateString());
+
+        return true;
+    }
+
+    private function hasActiveBlock(User $user, League $league): bool
+    {
+        return ItemEffect::query()
+            ->where('target_user_id', $user->id)
+            ->where('league_id', $league->id)
+            ->where('date', now()->toDateString())
+            ->where('status', ItemEffectStatus::Applied)
+            ->whereHas('userItem.item', function ($q) {
+                $q->whereJsonContains('effect->type', 'block_items');
+            })
+            ->exists();
+    }
+
+    public function hasAnonymousMode(User $user, League $league): bool
+    {
+        return ItemEffect::query()
+            ->whereHas('userItem', fn ($q) => $q->where('user_id', $user->id)->where('league_id', $league->id))
+            ->where('target_user_id', $user->id)
+            ->where('date', now()->toDateString())
+            ->where('status', ItemEffectStatus::Applied)
+            ->whereHas('userItem.item', function ($q) {
+                $q->whereJsonContains('effect->type', 'anonymous_mode');
+            })
+            ->exists();
+    }
+
+    private function sendNotifications(
+        \App\Services\Items\Contracts\ItemHandlerInterface $handler,
+        ItemEffect $effect,
+        User $user,
+        ?User $target,
+        League $league,
+    ): void {
+        $isAnonymous = $this->hasAnonymousMode($user, $league);
+
+        // Notify target
+        if ($target && $target->id !== $user->id) {
+            $notification = $handler->getTargetNotification($effect, $user);
+            if ($notification) {
+                $attackerName = $isAnonymous ? 'Someone' : $user->full_name;
+                $body = str_replace($user->full_name, $attackerName, $notification['body']);
+
+                $this->notificationService->create(
+                    $target,
+                    $league,
+                    'item_used',
+                    $notification['title'],
+                    $body,
+                );
+            }
+        }
+
+        // Notify user
+        $userNotification = $handler->getUserNotification($effect, $target);
+        if ($userNotification) {
+            $this->notificationService->create(
+                $user,
+                $league,
+                'item_used',
+                $userNotification['title'],
+                $userNotification['body'],
+            );
+        }
     }
 
     private function getRandomItemByRarity(): Item

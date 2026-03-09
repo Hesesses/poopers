@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\ItemType;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\UseItemRequest;
 use App\Http\Resources\UserItemResource;
 use App\Models\League;
 use App\Models\User;
@@ -33,13 +33,9 @@ class ItemController extends Controller
         return response()->json(UserItemResource::collection($items));
     }
 
-    public function use(Request $request, League $league, string $itemId): JsonResponse
+    public function use(UseItemRequest $request, League $league, string $itemId): JsonResponse
     {
         $this->authorize('useItems', $league);
-
-        $validated = $request->validate([
-            'target_user_id' => ['required', 'uuid', 'exists:users,id'],
-        ]);
 
         $userItem = UserItem::query()
             ->where('id', $itemId)
@@ -48,21 +44,20 @@ class ItemController extends Controller
             ->with('item')
             ->firstOrFail();
 
-        $target = User::query()->findOrFail($validated['target_user_id']);
+        $target = null;
+        if ($request->validated('target_user_id')) {
+            $target = User::query()->findOrFail($request->validated('target_user_id'));
+        }
 
-        $effect = $this->itemService->useItem($userItem, $request->user(), $target, $league);
+        $result = $this->itemService->useItem($userItem, $request->user(), $target, $league);
 
         $response = [
             'message' => 'Item used successfully.',
-            'effect_status' => $effect->status->name,
+            'effect_status' => $result['effect']->status->name,
         ];
 
-        // For spy items, include the spy data
-        if ($userItem->item->type === ItemType::Strategic) {
-            $spyData = $this->itemService->handleSpyItem($userItem, $target, $league);
-            if ($spyData) {
-                $response['spy_data'] = $spyData;
-            }
+        if ($result['response_data']) {
+            $response['response_data'] = $result['response_data'];
         }
 
         return response()->json($response);
