@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
-use App\Http\Resources\UserStatsResource;
 use App\Services\UserStatsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,11 +14,11 @@ class UserController extends Controller
         private UserStatsService $userStatsService,
     ) {}
 
-    public function stats(Request $request): UserStatsResource
+    public function stats(Request $request): JsonResponse
     {
         $stats = $this->userStatsService->getStats($request->user());
 
-        return new UserStatsResource($stats);
+        return response()->json($stats);
     }
 
     public function updateProfile(Request $request): UserResource

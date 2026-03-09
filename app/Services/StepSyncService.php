@@ -16,6 +16,7 @@ class StepSyncService
         private StepHeuristicsService $heuristicsService,
         private StepVelocityService $velocityService,
         private DailyResultService $dailyResultService,
+        private NotificationService $notificationService,
     ) {}
 
     /**
@@ -65,7 +66,18 @@ class StepSyncService
         // Auto-calculate results for past dates (checked per-league timezone)
         $this->calculateResultsForUserDate($user, $date);
 
-        return $dailySteps->fresh();
+        $dailySteps = $dailySteps->fresh();
+
+        if ($date === now()->toDateString()) {
+            $this->notificationService->create(
+                $user, null, 'steps_synced',
+                'Steps Synced',
+                'Your steps have been synced.',
+                ['steps' => $dailySteps->steps]
+            );
+        }
+
+        return $dailySteps;
     }
 
     public function recalculateModifiedSteps(User $user, string $date): void
