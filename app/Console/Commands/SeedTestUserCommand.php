@@ -22,7 +22,11 @@ class SeedTestUserCommand extends Command
         $league = League::query()->findOrFail($this->argument('leagueId'));
         $me = User::query()->findOrFail(1);
 
-        $opponent = User::factory()->create();
+        $opponent = User::query()->create([
+            'email' => 'test-'.uniqid().'@example.com',
+            'first_name' => 'Test',
+            'last_name' => 'Opponent',
+        ]);
 
         LeagueMember::query()->create([
             'league_id' => $league->id,
