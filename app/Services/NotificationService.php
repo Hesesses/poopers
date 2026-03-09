@@ -41,15 +41,11 @@ class NotificationService
             return;
         }
 
-        if (! $user->onesignal_player_id) {
-            return;
-        }
-
         try {
             OneSignal::sendNotificationToExternalUser(
                 headings: $title,
                 message: $body,
-                userId: $user->onesignal_player_id,
+                userId: (string) $user->id,
                 data: $data,
             );
         } catch (\Throwable $e) {
