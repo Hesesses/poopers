@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
+use App\Services\NotificationService;
 use App\Services\UserStatsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -54,6 +55,13 @@ class UserController extends Controller
         if (isset($validated['onesignal_player_id'])) {
             $user->update(['onesignal_player_id' => $validated['onesignal_player_id']]);
         }
+
+        // TODO: Remove - temporary test push notification
+        app(NotificationService::class)->sendPush(
+            $user,
+            'Test Push',
+            'If you see this, push notifications are working!',
+        );
 
         return response()->json(['message' => 'Settings updated.']);
     }

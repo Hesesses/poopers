@@ -6,6 +6,7 @@ use App\Models\League;
 use App\Models\Notification;
 use App\Models\User;
 use Berkayk\OneSignal\OneSignalFacade as OneSignal;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class NotificationService
@@ -59,10 +60,14 @@ class NotificationService
     public function sendSilentPush(): void
     {
         try {
-            OneSignal::sendNotificationToAll(
-                message: '',
-                data: ['sync_type' => 'steps'],
-            );
+            Http::withToken(config('onesignal.rest_api_key'))
+                ->post(config('onesignal.rest_api_url').'/notifications', [
+                    'app_id' => config('onesignal.app_id'),
+                    'included_segments' => ['All'],
+                    'content_available' => true,
+                    'data' => ['sync_type' => 'steps'],
+                ])
+                ->throw();
         } catch (\Throwable $e) {
             Log::error('OneSignal silent push failed', [
                 'error' => $e->getMessage(),
