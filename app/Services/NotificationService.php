@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\League;
 use App\Models\Notification;
 use App\Models\User;
-use Berkayk\OneSignal\OneSignalFacade as OneSignal;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -43,12 +42,26 @@ class NotificationService
         }
 
         try {
-            OneSignal::sendNotificationToExternalUser(
-                headings: $title,
-                message: $body,
-                userId: (string) $user->id,
-                data: $data,
-            );
+            $payload = [
+                'app_id' => config('onesignal.app_id'),
+                'contents' => ['en' => $body],
+                'headings' => ['en' => $title],
+                'include_aliases' => ['external_id' => [(string) $user->id]],
+                'target_channel' => 'push',
+            ];
+
+            if ($data) {
+                $payload['data'] = $data;
+            }
+
+            $response = Http::withToken(config('onesignal.rest_api_key'))
+                ->post(config('onesignal.rest_api_url').'/notifications', $payload)
+                ->throw();
+
+            Log::info('OneSignal push sent', [
+                'user_id' => $user->id,
+                'response' => $response->json(),
+            ]);
         } catch (\Throwable $e) {
             Log::error('OneSignal push notification failed', [
                 'user_id' => $user->id,
