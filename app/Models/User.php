@@ -24,6 +24,7 @@ class User extends Authenticatable
         'pro_expires_at',
         'onesignal_player_id',
         'notification_settings',
+        'daily_steps_goal',
     ];
 
     protected $hidden = [
@@ -36,6 +37,7 @@ class User extends Authenticatable
             'is_pro' => 'boolean',
             'pro_expires_at' => 'datetime',
             'notification_settings' => 'array',
+            'daily_steps_goal' => 'integer',
         ];
     }
 

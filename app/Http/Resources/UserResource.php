@@ -18,6 +18,7 @@ class UserResource extends JsonResource
             'avatar' => $this->avatar,
             'is_pro' => $this->isPro(),
             'created_at' => $this->created_at?->toIso8601String(),
+            'daily_steps_goal' => $this->daily_steps_goal ?? 10000,
             'notification_settings' => $this->notification_settings ?? [
                 'push_enabled' => true,
                 'daily_results' => true,

@@ -68,15 +68,6 @@ class StepSyncService
 
         $dailySteps = $dailySteps->fresh();
 
-        if ($date === now()->toDateString()) {
-            $this->notificationService->create(
-                $user, null, 'steps_synced',
-                'Steps Synced',
-                'Your steps have been synced.',
-                ['steps' => $dailySteps->steps]
-            );
-        }
-
         return $dailySteps;
     }
 

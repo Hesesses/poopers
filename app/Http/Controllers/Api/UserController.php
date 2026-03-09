@@ -44,6 +44,7 @@ class UserController extends Controller
             'notification_settings.draft_reminders' => ['boolean'],
             'notification_settings.attack_alerts' => ['boolean'],
             'onesignal_player_id' => ['sometimes', 'nullable', 'string'],
+            'daily_steps_goal' => ['sometimes', 'integer', 'min:1000', 'max:100000'],
         ]);
 
         $user = $request->user();
@@ -54,6 +55,10 @@ class UserController extends Controller
 
         if (isset($validated['onesignal_player_id'])) {
             $user->update(['onesignal_player_id' => $validated['onesignal_player_id']]);
+        }
+
+        if (isset($validated['daily_steps_goal'])) {
+            $user->update(['daily_steps_goal' => $validated['daily_steps_goal']]);
         }
 
         // TODO: Remove - temporary test push notification

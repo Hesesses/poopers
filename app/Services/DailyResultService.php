@@ -23,13 +23,17 @@ class DailyResultService
 
         $league->loadMissing('members');
 
+        $members = $league->members->filter(
+            fn (User $member) => $member->pivot->created_at->toDateString() <= $date
+        );
+
         $steps = DailySteps::query()
-            ->whereIn('user_id', $league->members->pluck('id'))
+            ->whereIn('user_id', $members->pluck('id'))
             ->where('date', $date)
             ->get()
             ->keyBy('user_id');
 
-        $sorted = $league->members->sortByDesc(fn (User $m) => $steps->get($m->id)?->modified_steps ?? 0)->values();
+        $sorted = $members->sortByDesc(fn (User $m) => $steps->get($m->id)?->modified_steps ?? 0)->values();
 
         if ($sorted->isEmpty()) {
             return;
