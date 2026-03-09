@@ -46,7 +46,7 @@ class NotificationService
                 'app_id' => config('onesignal.app_id'),
                 'contents' => ['en' => $body],
                 'headings' => ['en' => $title],
-                'include_aliases' => ['external_id' => [(string) $user->id]],
+                'include_aliases' => ['external_id' => ["user-{$user->id}"]],
                 'target_channel' => 'push',
             ];
 
@@ -54,7 +54,9 @@ class NotificationService
                 $payload['data'] = $data;
             }
 
-            $response = Http::withToken(config('onesignal.rest_api_key'))
+            $response = Http::withHeaders([
+                'Authorization' => 'Key '.config('onesignal.rest_api_key'),
+            ])
                 ->post(config('onesignal.rest_api_url').'/notifications', $payload)
                 ->throw();
 
@@ -73,7 +75,9 @@ class NotificationService
     public function sendSilentPush(): void
     {
         try {
-            Http::withToken(config('onesignal.rest_api_key'))
+            Http::withHeaders([
+                'Authorization' => 'Key '.config('onesignal.rest_api_key'),
+            ])
                 ->post(config('onesignal.rest_api_url').'/notifications', [
                     'app_id' => config('onesignal.app_id'),
                     'included_segments' => ['All'],
