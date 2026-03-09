@@ -75,7 +75,7 @@ class NotificationService
     public function sendSilentPush(): void
     {
         try {
-            Http::withHeaders([
+            $response = Http::withHeaders([
                 'Authorization' => 'Key '.config('onesignal.rest_api_key'),
             ])
                 ->post(config('onesignal.rest_api_url').'/notifications', [
@@ -85,6 +85,10 @@ class NotificationService
                     'data' => ['sync_type' => 'steps'],
                 ])
                 ->throw();
+
+            Log::info('OneSignal silent push sent', [
+                'response' => $response->json(),
+            ]);
         } catch (\Throwable $e) {
             Log::error('OneSignal silent push failed', [
                 'error' => $e->getMessage(),
