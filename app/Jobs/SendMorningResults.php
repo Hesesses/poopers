@@ -47,6 +47,7 @@ class SendMorningResults implements ShouldQueue
                         'daily_results',
                         'Yesterday\'s Results',
                         "{$winner->user->full_name} won with {$winner->modified_steps} steps!",
+                        ['league_id' => $league->id],
                     );
                 }
             }
