@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
-use App\Services\NotificationService;
 use App\Services\UserStatsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -60,13 +59,6 @@ class UserController extends Controller
         if (isset($validated['daily_steps_goal'])) {
             $user->update(['daily_steps_goal' => $validated['daily_steps_goal']]);
         }
-
-        // TODO: Remove - temporary test push notification
-        app(NotificationService::class)->sendPush(
-            $user,
-            'Test Push',
-            'If you see this, push notifications are working!',
-        );
 
         return response()->json(['message' => 'Settings updated.']);
     }
