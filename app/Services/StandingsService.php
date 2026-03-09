@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\DailySteps;
 use App\Models\League;
 use App\Models\LeagueDayResult;
+use App\Models\Streak;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -91,8 +92,15 @@ class StandingsService
             $standing->position = $index + 1;
         });
 
+        $streaks = Streak::query()
+            ->where('league_id', $league->id)
+            ->where('user_id', $currentUser->id)
+            ->where('current_count', '>', 0)
+            ->get();
+
         return [
             'standings' => $standings,
+            'streaks' => $streaks,
             'visibility' => $visibility,
             'league_time' => $leagueTime->format('H:i'),
         ];
