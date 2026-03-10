@@ -49,12 +49,12 @@ class MagicLinkService
 
         $magicLink->update(['used_at' => now()]);
 
-        return User::query()->updateOrCreate(
-            ['email' => $magicLink->email],
-            [
-                'first_name' => $magicLink->first_name ?? '',
-                'last_name' => $magicLink->last_name ?? '',
-            ],
-        );
+        $user = User::query()->firstOrNew(['email' => $magicLink->email]);
+
+        $user->first_name = $magicLink->first_name ?? $user->first_name ?? '';
+        $user->last_name = $magicLink->last_name ?? $user->last_name ?? '';
+        $user->save();
+
+        return $user;
     }
 }
