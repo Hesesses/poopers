@@ -63,9 +63,6 @@ class ItemService
             throw new ProRequiredException('This item requires a Pro subscription.');
         }
 
-        // Inventory limit check
-        $this->checkInventoryLimit($user, $league);
-
         // Check offense window (before 18:00 league time)
         if ($item->type === ItemType::Offensive) {
             $leagueTime = now()->setTimezone($league->timezone);
@@ -125,6 +122,8 @@ class ItemService
 
     public function awardRandomItem(User $user, League $league, ItemSource $source): UserItem
     {
+        $this->checkInventoryLimit($user, $league);
+
         $item = $this->getRandomItemByRarity();
 
         return UserItem::query()->create([
@@ -147,7 +146,7 @@ class ItemService
 
         $limit = $user->isPro() ? 10 : 3;
 
-        if ($unusedCount > $limit) {
+        if ($unusedCount >= $limit) {
             throw new InventoryFullException("Inventory full ({$limit} items max).");
         }
     }

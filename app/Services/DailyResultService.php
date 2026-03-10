@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\ItemSource;
+use App\Exceptions\InventoryFullException;
 use App\Models\DailySteps;
 use App\Models\League;
 use App\Models\LeagueDayResult;
@@ -97,11 +98,15 @@ class DailyResultService
             ]);
 
             if ($awardItems && $pos['is_winner']) {
-                app(ItemService::class)->awardRandomItem(
-                    User::query()->find($pos['user_id']),
-                    $league,
-                    ItemSource::DailyWin,
-                );
+                try {
+                    app(ItemService::class)->awardRandomItem(
+                        User::query()->find($pos['user_id']),
+                        $league,
+                        ItemSource::DailyWin,
+                    );
+                } catch (InventoryFullException) {
+                    // Inventory full — skip awarding item
+                }
             }
         }
 
