@@ -129,11 +129,6 @@ class LeagueService
         }
 
         $member->delete();
-
-        // Check if league should be downgraded from pro
-        if ($league->is_pro_league && $league->memberCount() < 6) {
-            $league->update(['is_pro_league' => false]);
-        }
     }
 
     public function removeMember(User $admin, League $league, User $target): void
@@ -156,10 +151,6 @@ class LeagueService
         }
 
         $member->delete();
-
-        if ($league->is_pro_league && $league->memberCount() < 6) {
-            $league->update(['is_pro_league' => false]);
-        }
     }
 
     public function refreshInviteCode(League $league): string
