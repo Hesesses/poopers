@@ -37,6 +37,8 @@ class LeagueService
             'role' => LeagueMemberRole::Admin,
         ]);
 
+        $this->grantWelcomeItems($user, $league);
+
         return $league;
     }
 
