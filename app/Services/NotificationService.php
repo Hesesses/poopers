@@ -99,7 +99,6 @@ class NotificationService
                         'include_aliases' => ['external_id' => $chunk],
                         'target_channel' => 'push',
                         'content_available' => true,
-                        'apns_push_type_override' => 'background',
                         'data' => ['sync_type' => 'steps'],
                     ])
                     ->throw();
