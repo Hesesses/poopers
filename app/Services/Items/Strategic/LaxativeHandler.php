@@ -33,7 +33,7 @@ class LaxativeHandler extends BaseItemHandler
                 $member,
                 $league,
                 'force_reveal',
-                'Step Reveal!',
+                "Step Reveal! [{$league->name}]",
                 "{$target->full_name} has {$steps} steps today!",
             );
         }

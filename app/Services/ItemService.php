@@ -205,7 +205,7 @@ class ItemService
                     $target,
                     $league,
                     'item_used',
-                    $notification['title'],
+                    "{$notification['title']} [{$league->name}]",
                     $body,
                 );
             }
@@ -218,7 +218,7 @@ class ItemService
                 $user,
                 $league,
                 'item_used',
-                $userNotification['title'],
+                "{$userNotification['title']} [{$league->name}]",
                 $userNotification['body'],
                 sendPush: false,
             );
@@ -234,7 +234,7 @@ class ItemService
             }
 
             $otherMembers = $league->members()->whereNotIn('users.id', $excludeIds)->get();
-            $title = 'Item Used!';
+            $title = "Item Used! [{$league->name}]";
             $body = $target && $target->id !== $user->id
                 ? "{$attackerName} used {$itemName} on {$target->full_name}!"
                 : "{$attackerName} used {$itemName}!";

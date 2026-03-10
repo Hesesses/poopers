@@ -24,6 +24,7 @@ class MagicLinkService
             'first_name' => $firstName,
             'last_name' => $lastName,
             'token' => Str::random(64),
+            'code' => str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT),
             'expires_at' => now()->addMinutes(15),
         ]);
 
@@ -34,8 +35,10 @@ class MagicLinkService
 
     public function verify(string $token): ?User
     {
+        $column = preg_match('/^\d{6}$/', $token) ? 'code' : 'token';
+
         $magicLink = MagicLink::query()
-            ->where('token', $token)
+            ->where($column, $token)
             ->whereNull('used_at')
             ->where('expires_at', '>', now())
             ->first();

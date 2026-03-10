@@ -17,7 +17,7 @@ class VerifyMagicLinkRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'token' => ['required', 'string', 'size:64'],
+            'token' => ['required', 'string', 'regex:/^(\d{6}|[a-zA-Z0-9]{64})$/'],
         ];
     }
 }

@@ -28,7 +28,7 @@ class SendItemExpiryWarnings implements ShouldQueue
                 $userItem->user,
                 $userItem->league,
                 'item_expiring',
-                'Item Expiring Soon',
+                "Item Expiring Soon [{$userItem->league->name}]",
                 "Your {$userItem->item->name} in {$userItem->league->name} expires soon! Use it or lose it.",
             );
         }

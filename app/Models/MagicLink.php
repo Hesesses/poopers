@@ -11,6 +11,7 @@ class MagicLink extends Model
         'first_name',
         'last_name',
         'token',
+        'code',
         'expires_at',
         'used_at',
     ];

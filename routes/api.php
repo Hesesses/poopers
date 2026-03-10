@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Route;
 // Auth (public)
 Route::prefix('auth')->group(function () {
     Route::post('/magic-link', [AuthController::class, 'sendMagicLink']);
-    Route::post('/verify', [AuthController::class, 'verify']);
+    Route::post('/verify', [AuthController::class, 'verify'])->middleware('throttle:5,1');
 
     if (app()->environment('local')) {
         Route::post('/dev-login', [AuthController::class, 'devLogin']);

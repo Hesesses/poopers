@@ -30,6 +30,7 @@ class MagicLinkMail extends Mailable
             markdown: 'mail.magic-link',
             with: [
                 'url' => route('auth.verify', ['token' => $this->magicLink->token]),
+                'code' => $this->magicLink->code,
                 'expiresAt' => $this->magicLink->expires_at->diffForHumans(),
             ],
         );

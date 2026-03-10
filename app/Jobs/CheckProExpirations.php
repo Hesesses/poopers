@@ -46,7 +46,7 @@ class CheckProExpirations implements ShouldQueue
                     $user,
                     $member->league,
                     'pro_expired',
-                    'PRO Expired',
+                    "PRO Expired [{$member->league->name}]",
                     "You've been removed from {$member->league->name} because your PRO subscription expired.",
                 );
 

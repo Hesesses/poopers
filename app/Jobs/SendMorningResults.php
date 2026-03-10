@@ -45,7 +45,7 @@ class SendMorningResults implements ShouldQueue
                         $member,
                         $league,
                         'daily_results',
-                        'Yesterday\'s Results',
+                        "Yesterday's Results [{$league->name}]",
                         "The results are in for {$league->name}! Tap to see who won 🏆 and who's the pooper 💩",
                         ['league_id' => $league->id],
                     );

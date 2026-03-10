@@ -8,6 +8,7 @@ use App\Models\DailySteps;
 use App\Models\ItemEffect;
 use App\Models\League;
 use App\Models\LeagueDayResult;
+use App\Models\LeagueNoonSnapshot;
 use App\Models\Streak;
 use App\Models\User;
 use Carbon\Carbon;
@@ -57,56 +58,93 @@ class StandingsService
     {
         $leagueTime = now()->setTimezone($league->timezone);
         $hour = $leagueTime->hour;
-        $today = $leagueTime->toDateString();
+        $today = $leagueTime->copy()->startOfDay();
 
-        $visibility = $this->getVisibilityLevel($hour);
+        $phase = $this->getVisibilityPhase($hour);
 
         $members = $league->members()->get();
-        $steps = DailySteps::query()
+        $activeEffects = $this->getActiveEffects($league->id, $today);
+
+        // Load live steps (needed for own_steps, expose_steps, evening phase, and hidden phase)
+        $liveSteps = DailySteps::query()
             ->whereIn('user_id', $members->pluck('id'))
             ->where('date', $today)
             ->get()
             ->keyBy('user_id');
 
-        // Load active item effects for visibility modifications
-        $activeEffects = $this->getActiveEffects($league->id, $today);
+        // Load noon snapshot for noon_reveal phase
+        $snapshots = null;
+        if ($phase === 'noon_reveal') {
+            $snapshots = LeagueNoonSnapshot::query()
+                ->where('league_id', $league->id)
+                ->where('date', $today)
+                ->get()
+                ->keyBy('user_id');
 
-        $standings = $members->map(function (User $member) use ($steps, $currentUser, $visibility, $activeEffects) {
-            $memberSteps = $steps->get($member->id);
-            $realSteps = $memberSteps?->steps ?? 0;
-            $realModifiedSteps = $memberSteps?->modified_steps ?? 0;
+            // No snapshot available — fall back to hidden phase
+            if ($snapshots->isEmpty()) {
+                $phase = 'hidden';
+                $snapshots = null;
+            }
+        }
 
-            $showSteps = match ($visibility) {
-                'own_only' => $member->id === $currentUser->id,
-                'snapshot' => true,
-                default => false,
+        $standings = $members->map(function (User $member) use ($liveSteps, $snapshots, $currentUser, $phase, $activeEffects) {
+            $isSelf = $member->id === $currentUser->id;
+            $liveMemberSteps = $liveSteps->get($member->id);
+            $liveRealSteps = $liveMemberSteps?->steps ?? 0;
+            $liveRealModifiedSteps = $liveMemberSteps?->modified_steps ?? 0;
+
+            // 1. Base visibility from phase
+            $showSteps = match ($phase) {
+                'hidden' => $isSelf,
+                'noon_reveal' => true,
+                'evening' => false,
             };
+            $showPositions = $phase !== 'hidden';
 
-            $showPositions = $visibility !== 'own_only';
-
-            // Toilet Paper Trail: expose target's steps to everyone
-            if ($this->hasEffect($activeEffects, $member->id, ItemEffectType::ExposeSteps)) {
-                $showSteps = true;
+            // Determine source steps (snapshot or live)
+            if ($phase === 'noon_reveal' && $snapshots) {
+                $snapshot = $snapshots->get($member->id);
+                $sourceSteps = $snapshot?->steps ?? 0;
+                $sourceModifiedSteps = $snapshot?->modified_steps ?? 0;
+            } else {
+                $sourceSteps = $liveRealSteps;
+                $sourceModifiedSteps = $liveRealModifiedSteps;
             }
 
-            // The Brown Out: hide position from target
-            if ($member->id === $currentUser->id && $this->hasEffect($activeEffects, $currentUser->id, ItemEffectType::HideRanking)) {
+            $displaySteps = $sourceSteps;
+            $displayModifiedSteps = $sourceModifiedSteps;
+
+            // 2. expose_steps → force show LIVE steps
+            if ($this->hasEffect($activeEffects, $member->id, ItemEffectType::ExposeSteps)) {
+                $showSteps = true;
+                $displaySteps = $liveRealSteps;
+                $displayModifiedSteps = $liveRealModifiedSteps;
+            }
+
+            // 3. hide_steps_from_attacker → hide steps from specific viewer
+            if (! $isSelf && $this->isHiddenFromUser($activeEffects, $member->id, $currentUser->id)) {
+                $showSteps = false;
+            }
+
+            // 4. hide_ranking → hide position from target
+            if ($isSelf && $this->hasEffect($activeEffects, $currentUser->id, ItemEffectType::HideRanking)) {
                 $showPositions = false;
             }
 
-            // Fake Poop: show fake steps to others
-            $displaySteps = $realSteps;
-            $displayModifiedSteps = $realModifiedSteps;
-            if ($member->id !== $currentUser->id && $this->hasEffectOnSelf($activeEffects, $member->id, ItemEffectType::FakeSteps)) {
+            // 5. fake_steps → apply variance when steps visible to others
+            if (! $isSelf && $showSteps && $this->hasEffectOnSelf($activeEffects, $member->id, ItemEffectType::FakeSteps)) {
                 $variance = 30;
                 $fakeMultiplier = 1 + (random_int(-$variance, $variance) / 100);
-                $displaySteps = (int) round($realSteps * $fakeMultiplier);
-                $displayModifiedSteps = (int) round($realModifiedSteps * $fakeMultiplier);
+                $displaySteps = (int) round($displaySteps * $fakeMultiplier);
+                $displayModifiedSteps = (int) round($displayModifiedSteps * $fakeMultiplier);
             }
 
-            // Odor Shield: hide steps from specific attackers
-            if ($member->id !== $currentUser->id && $this->isHiddenFromUser($activeEffects, $member->id, $currentUser->id)) {
-                $showSteps = false;
+            // Position from snapshot during noon_reveal
+            $position = null;
+            if ($phase === 'noon_reveal' && $snapshots) {
+                $snapshot = $snapshots->get($member->id);
+                $position = $snapshot?->position;
             }
 
             return (object) [
@@ -115,14 +153,33 @@ class StandingsService
                 'modified_steps' => $showSteps ? $displayModifiedSteps : null,
                 'show_steps' => $showSteps,
                 'show_positions' => $showPositions,
-                'is_self' => $member->id === $currentUser->id,
-                'own_steps' => $member->id === $currentUser->id ? $realSteps : null,
+                'is_self' => $isSelf,
+                'own_steps' => $isSelf ? $liveRealSteps : null,
+                'position' => $position,
+                '_modified_steps_for_sort' => $phase === 'evening' ? $liveRealModifiedSteps : ($sourceModifiedSteps ?? 0),
             ];
-        })->sortByDesc(fn ($s) => $s->modified_steps ?? 0)->values();
+        });
 
-        // Assign positions
-        $standings->each(function ($standing, $index) {
-            $standing->position = $index + 1;
+        // Sort and assign positions based on phase
+        if ($phase === 'hidden') {
+            // Current user first, rest randomized with stable seed per day
+            $self = $standings->filter(fn ($s) => $s->is_self)->values();
+            $others = $standings->filter(fn ($s) => ! $s->is_self)->shuffle(crc32($today->toDateString().$league->id));
+            $standings = $self->merge($others)->values();
+        } elseif ($phase === 'noon_reveal') {
+            // Sort by snapshot position
+            $standings = $standings->sortBy(fn ($s) => $s->position ?? PHP_INT_MAX)->values();
+        } else {
+            // Evening: sort by live modified_steps, assign live positions
+            $standings = $standings->sortByDesc(fn ($s) => $s->_modified_steps_for_sort)->values();
+            $standings->each(function ($standing, $index) {
+                $standing->position = $index + 1;
+            });
+        }
+
+        // Clean up internal sort field
+        $standings->each(function ($standing) {
+            unset($standing->_modified_steps_for_sort);
         });
 
         $streaks = Streak::query()
@@ -134,7 +191,7 @@ class StandingsService
         return [
             'standings' => $standings,
             'streaks' => $streaks,
-            'visibility' => $visibility,
+            'visibility' => $phase,
             'league_time' => $leagueTime->format('H:i'),
         ];
     }
@@ -176,23 +233,19 @@ class StandingsService
         })->filter()->sortByDesc('wins')->values();
     }
 
-    private function getVisibilityLevel(int $hour): string
+    private function getVisibilityPhase(int $hour): string
     {
-        if ($hour >= 0 && $hour < 8) {
-            return 'own_only';
-        }
-
-        if ($hour === 12 || $hour === 18) {
-            return 'snapshot';
-        }
-
-        return 'positions_only';
+        return match (true) {
+            $hour < 12 => 'hidden',
+            $hour < 18 => 'noon_reveal',
+            default => 'evening',
+        };
     }
 
     /**
      * @return Collection<int, ItemEffect>
      */
-    private function getActiveEffects(string $leagueId, string $date): Collection
+    private function getActiveEffects(int $leagueId, Carbon $date): Collection
     {
         return ItemEffect::query()
             ->where('league_id', $leagueId)
@@ -205,7 +258,7 @@ class StandingsService
     /**
      * @param  Collection<int, ItemEffect>  $effects
      */
-    private function hasEffect(Collection $effects, string $targetUserId, ItemEffectType $type): bool
+    private function hasEffect(Collection $effects, int $targetUserId, ItemEffectType $type): bool
     {
         return $effects->contains(function (ItemEffect $effect) use ($targetUserId, $type) {
             return $effect->target_user_id === $targetUserId
@@ -214,11 +267,9 @@ class StandingsService
     }
 
     /**
-     * Check if user has an effect they placed on themselves.
-     *
      * @param  Collection<int, ItemEffect>  $effects
      */
-    private function hasEffectOnSelf(Collection $effects, string $userId, ItemEffectType $type): bool
+    private function hasEffectOnSelf(Collection $effects, int $userId, ItemEffectType $type): bool
     {
         return $effects->contains(function (ItemEffect $effect) use ($userId, $type) {
             return $effect->target_user_id === $userId
@@ -228,16 +279,13 @@ class StandingsService
     }
 
     /**
-     * Check if a user's steps are hidden from a specific viewer (Odor Shield).
-     *
      * @param  Collection<int, ItemEffect>  $effects
      */
-    private function isHiddenFromUser(Collection $effects, string $targetUserId, string $viewerUserId): bool
+    private function isHiddenFromUser(Collection $effects, int $targetUserId, int $viewerUserId): bool
     {
         return $effects->contains(function (ItemEffect $effect) use ($viewerUserId) {
             $type = ItemEffectType::tryFrom($effect->userItem->item->effect['type'] ?? '');
 
-            // Odor Shield creates effects where target_user_id is the attacker to hide from
             return $type === ItemEffectType::HideStepsFromAttacker
                 && $effect->target_user_id === $viewerUserId;
         });

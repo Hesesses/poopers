@@ -47,6 +47,11 @@ class League extends Model
         return $this->hasMany(LeagueDayResult::class);
     }
 
+    public function noonSnapshots(): HasMany
+    {
+        return $this->hasMany(LeagueNoonSnapshot::class);
+    }
+
     public function userItems(): HasMany
     {
         return $this->hasMany(UserItem::class);

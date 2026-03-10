@@ -30,6 +30,7 @@ it('verifies valid token and returns user and token', function () {
     $magicLink = MagicLink::create([
         'email' => 'test@example.com',
         'token' => Str::random(64),
+        'code' => '123456',
         'expires_at' => now()->addMinutes(15),
     ]);
 
@@ -42,6 +43,7 @@ it('creates new user on first verify', function () {
     $magicLink = MagicLink::create([
         'email' => 'newuser@example.com',
         'token' => Str::random(64),
+        'code' => '123456',
         'expires_at' => now()->addMinutes(15),
     ]);
 
@@ -56,6 +58,7 @@ it('returns existing user on repeat verify', function () {
     $magicLink = MagicLink::create([
         'email' => 'existing@example.com',
         'token' => Str::random(64),
+        'code' => '123456',
         'expires_at' => now()->addMinutes(15),
     ]);
 
@@ -73,6 +76,7 @@ it('fails with expired token', function () {
     $magicLink = MagicLink::create([
         'email' => 'test@example.com',
         'token' => Str::random(64),
+        'code' => '123456',
         'expires_at' => now()->subMinute(),
     ]);
 
@@ -84,12 +88,77 @@ it('fails with used token', function () {
     $magicLink = MagicLink::create([
         'email' => 'test@example.com',
         'token' => Str::random(64),
+        'code' => '123456',
         'expires_at' => now()->addMinutes(15),
         'used_at' => now(),
     ]);
 
     $this->postJson('/api/auth/verify', ['token' => $magicLink->token])
         ->assertUnauthorized();
+});
+
+it('verifies valid 6-digit code and returns user and token', function () {
+    $magicLink = MagicLink::create([
+        'email' => 'test@example.com',
+        'token' => Str::random(64),
+        'code' => '987654',
+        'expires_at' => now()->addMinutes(15),
+    ]);
+
+    $response = $this->postJson('/api/auth/verify', ['token' => '987654']);
+
+    $response->assertOk()->assertJsonStructure(['user', 'token']);
+});
+
+it('creates new user via 6-digit code on first login', function () {
+    $magicLink = MagicLink::create([
+        'email' => 'codeuser@example.com',
+        'token' => Str::random(64),
+        'code' => '111222',
+        'expires_at' => now()->addMinutes(15),
+    ]);
+
+    $this->postJson('/api/auth/verify', ['token' => '111222']);
+
+    expect(User::where('email', 'codeuser@example.com')->count())->toBe(1);
+});
+
+it('fails with invalid 6-digit code', function () {
+    $this->postJson('/api/auth/verify', ['token' => '000000'])
+        ->assertUnauthorized();
+});
+
+it('fails with expired 6-digit code', function () {
+    MagicLink::create([
+        'email' => 'test@example.com',
+        'token' => Str::random(64),
+        'code' => '333444',
+        'expires_at' => now()->subMinute(),
+    ]);
+
+    $this->postJson('/api/auth/verify', ['token' => '333444'])
+        ->assertUnauthorized();
+});
+
+it('fails with used 6-digit code', function () {
+    MagicLink::create([
+        'email' => 'test@example.com',
+        'token' => Str::random(64),
+        'code' => '555666',
+        'expires_at' => now()->addMinutes(15),
+        'used_at' => now(),
+    ]);
+
+    $this->postJson('/api/auth/verify', ['token' => '555666'])
+        ->assertUnauthorized();
+});
+
+it('generates a 6-digit code when sending magic link', function () {
+    $this->postJson('/api/auth/magic-link', ['email' => 'test@example.com']);
+
+    $magicLink = MagicLink::where('email', 'test@example.com')->first();
+
+    expect($magicLink->code)->toMatch('/^\d{6}$/');
 });
 
 it('returns authenticated user', function () {

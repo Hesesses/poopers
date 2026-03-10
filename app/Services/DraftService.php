@@ -193,7 +193,7 @@ class DraftService
             $user,
             $draft->league,
             'draft_turn',
-            'Your turn to pick!',
+            "Your turn to pick! [{$draft->league->name}]",
             "It's your turn in the {$draft->league->name} draft. You have 4 hours to pick.",
         );
     }

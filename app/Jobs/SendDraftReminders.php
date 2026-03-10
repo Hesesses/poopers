@@ -46,7 +46,7 @@ class SendDraftReminders implements ShouldQueue
                         $user,
                         $draft->league,
                         'draft_reminder',
-                        'Draft Reminder',
+                        "Draft Reminder [{$draft->league->name}]",
                         "It's still your turn to pick in {$draft->league->name}! You have ".(4 - $hoursSince).' hours left.',
                     );
                 }

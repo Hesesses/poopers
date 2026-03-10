@@ -41,7 +41,7 @@ class SendSnapshotNotifications implements ShouldQueue
                 $leaderSteps = $steps->get($leader?->id)?->modified_steps ?? 0;
 
                 $type = $hour === 12 ? 'midday_snapshot' : 'evening_snapshot';
-                $title = $hour === 12 ? 'Midday Snapshot' : 'Evening Snapshot';
+                $title = $hour === 12 ? "Midday Snapshot [{$league->name}]" : "Evening Snapshot [{$league->name}]";
 
                 foreach ($league->members as $member) {
                     $position = $sorted->search(fn ($m) => $m->id === $member->id) + 1;
