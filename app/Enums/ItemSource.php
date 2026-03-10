@@ -9,4 +9,5 @@ enum ItemSource: int
     case Milestone = 3;
     case Bonus = 4;
     case Welcome = 5;
+    case Loot = 6;
 }

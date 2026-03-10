@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\InviteCodeController;
 use App\Http\Controllers\Api\ItemController;
 use App\Http\Controllers\Api\LeagueController;
 use App\Http\Controllers\Api\LeagueMemberController;
+use App\Http\Controllers\Api\LootController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\StandingsController;
 use App\Http\Controllers\Api\SubscriptionController;
@@ -64,6 +65,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Items
     Route::get('/leagues/{league}/items', [ItemController::class, 'index']);
     Route::post('/leagues/{league}/items/{itemId}/use', [ItemController::class, 'use']);
+
+    // Loot
+    Route::post('/leagues/{league}/loot/claim', [LootController::class, 'claim']);
 
     // Drafts
     Route::get('/leagues/{league}/drafts', [DraftController::class, 'index']);

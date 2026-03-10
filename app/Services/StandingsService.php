@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\ItemEffectStatus;
 use App\Enums\ItemEffectType;
+use App\Enums\ItemSource;
 use App\Models\DailySteps;
 use App\Models\ItemEffect;
 use App\Models\League;
@@ -11,6 +12,7 @@ use App\Models\LeagueDayResult;
 use App\Models\LeagueNoonSnapshot;
 use App\Models\Streak;
 use App\Models\User;
+use App\Models\UserItem;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -213,11 +215,19 @@ class StandingsService
             ->where('current_count', '>', 0)
             ->get();
 
+        $canClaimLoot = $hour >= 8 && ! UserItem::query()
+            ->where('user_id', $currentUser->id)
+            ->where('league_id', $league->id)
+            ->where('source', ItemSource::Loot)
+            ->where('created_at', '>=', $today->copy()->setTimezone('UTC'))
+            ->exists();
+
         return [
             'standings' => $standings,
             'streaks' => $streaks,
             'visibility' => $phase,
             'league_time' => $leagueTime->format('H:i'),
+            'can_claim_loot' => $canClaimLoot,
         ];
     }
 
