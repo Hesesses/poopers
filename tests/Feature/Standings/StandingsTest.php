@@ -26,6 +26,26 @@ it('returns yesterday results', function () {
         ->assertJsonStructure(['results']);
 });
 
+it('hides yesterday results before 8am in league timezone', function () {
+    [$user, $league] = createLeagueWithMember();
+
+    $this->travelTo(now()->setTimezone($league->timezone)->startOfDay()->addHours(3));
+
+    $this->getJson("/api/leagues/{$league->id}/standings/yesterday")
+        ->assertOk()
+        ->assertJson(['announced' => false, 'results' => []]);
+});
+
+it('shows yesterday results after 8am in league timezone', function () {
+    [$user, $league] = createLeagueWithMember();
+
+    $this->travelTo(now()->setTimezone($league->timezone)->startOfDay()->addHours(9));
+
+    $this->getJson("/api/leagues/{$league->id}/standings/yesterday")
+        ->assertOk()
+        ->assertJson(['announced' => true]);
+});
+
 it('returns today data', function () {
     [$user, $league] = createLeagueWithMember();
 

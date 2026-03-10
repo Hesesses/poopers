@@ -36,9 +36,21 @@ class StandingsController extends Controller
     {
         $this->authorize('viewStandings', $league);
 
+        $leagueHour = now()->setTimezone($league->timezone)->hour;
+
+        if ($leagueHour < 8) {
+            return response()->json([
+                'results' => [],
+                'announced' => false,
+            ]);
+        }
+
         $results = $this->standingsService->getYesterdayResults($league);
 
-        return response()->json(['results' => $results]);
+        return response()->json([
+            'results' => $results,
+            'announced' => true,
+        ]);
     }
 
     public function today(Request $request, League $league): JsonResponse
