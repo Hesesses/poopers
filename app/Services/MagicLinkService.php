@@ -19,16 +19,20 @@ class MagicLinkService
             ->where('expires_at', '>', now())
             ->update(['expires_at' => now()]);
 
+        $isReviewAccount = $email === 'appstore@poopers.app';
+
         $magicLink = MagicLink::query()->create([
             'email' => $email,
             'first_name' => $firstName,
             'last_name' => $lastName,
             'token' => Str::random(64),
-            'code' => str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT),
+            'code' => $isReviewAccount ? '000000' : str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT),
             'expires_at' => now()->addMinutes(15),
         ]);
 
-        Mail::to($email)->send(new MagicLinkMail($magicLink));
+        if (! $isReviewAccount) {
+            Mail::to($email)->send(new MagicLinkMail($magicLink));
+        }
 
         return $magicLink;
     }

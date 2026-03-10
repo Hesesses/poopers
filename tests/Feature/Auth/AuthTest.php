@@ -153,6 +153,15 @@ it('fails with used 6-digit code', function () {
         ->assertUnauthorized();
 });
 
+it('creates magic link with fixed code and skips email for app store review account', function () {
+    $this->postJson('/api/auth/magic-link', ['email' => 'appstore@poopers.app']);
+
+    $magicLink = MagicLink::where('email', 'appstore@poopers.app')->first();
+
+    expect($magicLink->code)->toBe('000000');
+    Mail::assertNothingSent();
+});
+
 it('generates a 6-digit code when sending magic link', function () {
     $this->postJson('/api/auth/magic-link', ['email' => 'test@example.com']);
 
