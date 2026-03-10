@@ -9,6 +9,7 @@ use App\Http\Resources\UserItemResource;
 use App\Models\League;
 use App\Models\UserItem;
 use App\Services\ItemService;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -16,6 +17,7 @@ class LootController extends Controller
 {
     public function __construct(
         private ItemService $itemService,
+        private NotificationService $notificationService,
     ) {}
 
     public function claim(Request $request, League $league): JsonResponse
@@ -45,6 +47,15 @@ class LootController extends Controller
         try {
             $userItem = $this->itemService->awardRandomItem($user, $league, ItemSource::Loot);
             $userItem->load('item');
+
+            $this->notificationService->create(
+                $user,
+                $league,
+                'item_received',
+                "Daily Loot! [{$league->name}]",
+                "You found a {$userItem->item->name}!",
+                sendPush: false,
+            );
 
             return response()->json([
                 'user_item' => new UserItemResource($userItem),

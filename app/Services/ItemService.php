@@ -211,8 +211,9 @@ class ItemService
             }
         }
 
-        // Notify user (DB only, no push — they just used the item)
+        // Always notify user (DB only, no push — they just used the item)
         $userNotification = $handler->getUserNotification($effect, $target);
+        $itemName = $effect->userItem->item->name;
         if ($userNotification) {
             $this->notificationService->create(
                 $user,
@@ -220,6 +221,19 @@ class ItemService
                 'item_used',
                 "{$userNotification['title']} [{$league->name}]",
                 $userNotification['body'],
+                sendPush: false,
+            );
+        } else {
+            $body = $target && $target->id !== $user->id
+                ? "You used {$itemName} on {$target->full_name}!"
+                : "You used {$itemName}!";
+
+            $this->notificationService->create(
+                $user,
+                $league,
+                'item_used',
+                "Item Used! [{$league->name}]",
+                $body,
                 sendPush: false,
             );
         }
