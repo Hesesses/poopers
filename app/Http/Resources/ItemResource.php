@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Services\Items\ItemHandlerRegistry;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -18,6 +19,7 @@ class ItemResource extends JsonResource
             'rarity' => $this->rarity->name,
             'effect' => $this->effect,
             'icon' => $this->icon,
+            'requires_target' => app(ItemHandlerRegistry::class)->resolve($this->resource)->requiresTarget(),
         ];
     }
 }

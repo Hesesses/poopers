@@ -29,7 +29,7 @@ class CalculateDailyResults implements ShouldQueue
 
                 $yesterday = $leagueTime->copy()->subDay()->toDateString();
 
-                $dailyResultService->calculateForLeague($league, $yesterday);
+                $dailyResultService->calculateForLeague($league, $yesterday, recalculate: true);
             }
         });
     }
