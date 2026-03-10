@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\ItemEffectStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\UseItemRequest;
 use App\Http\Resources\UserItemResource;
+use App\Models\ItemEffect;
 use App\Models\League;
 use App\Models\User;
 use App\Models\UserItem;
@@ -61,5 +63,29 @@ class ItemController extends Controller
         }
 
         return response()->json($response);
+    }
+
+    public function activeEffects(Request $request, League $league): JsonResponse
+    {
+        $this->authorize('useItems', $league);
+
+        $effects = ItemEffect::query()
+            ->where('target_user_id', $request->user()->id)
+            ->where('league_id', $league->id)
+            ->where('date', now()->toDateString())
+            ->where('status', ItemEffectStatus::Applied)
+            ->with('userItem.item', 'userItem.user')
+            ->get();
+
+        $data = $effects->map(fn (ItemEffect $effect) => [
+            'id' => $effect->id,
+            'item_name' => $effect->userItem->item->name,
+            'item_icon' => $effect->userItem->item->icon,
+            'item_description' => $effect->userItem->item->description,
+            'item_type' => $effect->userItem->item->type->value,
+            'attacker_name' => $effect->userItem->user->full_name,
+        ]);
+
+        return response()->json(['effects' => $data]);
     }
 }

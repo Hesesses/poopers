@@ -255,7 +255,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Common,
                 'effect' => ['type' => 'spy_single'],
                 'icon' => '🔭',
-                'is_public' => true,
+                'is_public' => false,
             ],
             [
                 'slug' => 'fiber_boost',
@@ -265,7 +265,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Common,
                 'effect' => ['type' => 'boost_steps', 'value' => 5, 'unit' => 'percent'],
                 'icon' => '🥦',
-                'is_public' => true,
+                'is_public' => false,
             ],
             [
                 'slug' => 'morning_coffee',
@@ -275,7 +275,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Common,
                 'effect' => ['type' => 'timed_boost', 'multiplier' => 1.1, 'before_hour' => 12],
                 'icon' => '☕',
-                'is_public' => true,
+                'is_public' => false,
             ],
             [
                 'slug' => 'peek_a_poo',
@@ -285,7 +285,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Common,
                 'effect' => ['type' => 'spy_self_rank'],
                 'icon' => '👀',
-                'is_public' => true,
+                'is_public' => false,
             ],
             [
                 'slug' => 'fake_poop',
@@ -315,16 +315,6 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Rare,
                 'effect' => ['type' => 'copy_item'],
                 'icon' => '🐱',
-                'is_public' => true,
-            ],
-            [
-                'slug' => 'anonymous_tip',
-                'name' => 'Anonymous Tip',
-                'description' => 'Your identity is hidden when using items today',
-                'type' => ItemType::Strategic,
-                'rarity' => ItemRarity::Rare,
-                'effect' => ['type' => 'anonymous_mode'],
-                'icon' => '🕶️',
                 'is_public' => false,
             ],
             [
@@ -335,7 +325,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Rare,
                 'effect' => ['type' => 'spy_inventory'],
                 'icon' => '🕵️',
-                'is_public' => true,
+                'is_public' => false,
             ],
             [
                 'slug' => 'double_or_nothing',
@@ -345,7 +335,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Epic,
                 'effect' => ['type' => 'coin_flip', 'win' => 10, 'lose' => 10],
                 'icon' => '🎰',
-                'is_public' => true,
+                'is_public' => false,
             ],
             [
                 'slug' => 'prune_juice',
@@ -365,7 +355,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Epic,
                 'effect' => ['type' => 'projection'],
                 'icon' => '🔮',
-                'is_public' => true,
+                'is_public' => false,
             ],
             [
                 'slug' => 'toilet_swap',

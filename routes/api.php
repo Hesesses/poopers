@@ -65,6 +65,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Items
     Route::get('/leagues/{league}/items', [ItemController::class, 'index']);
     Route::post('/leagues/{league}/items/{itemId}/use', [ItemController::class, 'use']);
+    Route::get('/leagues/{league}/effects', [ItemController::class, 'activeEffects']);
 
     // Loot
     Route::post('/leagues/{league}/loot/claim', [LootController::class, 'claim']);

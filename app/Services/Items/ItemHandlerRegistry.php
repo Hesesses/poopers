@@ -28,7 +28,6 @@ use App\Services\Items\Offensive\TheBrownOutHandler;
 use App\Services\Items\Offensive\ToiletPaperTrailHandler;
 use App\Services\Items\Offensive\UpperDeckerHandler;
 use App\Services\Items\Strategic\AllSeeingEyeHandler;
-use App\Services\Items\Strategic\AnonymousTipHandler;
 use App\Services\Items\Strategic\CopycatHandler;
 use App\Services\Items\Strategic\CrystalBallHandler;
 use App\Services\Items\Strategic\DoubleOrNothingHandler;
@@ -83,7 +82,6 @@ class ItemHandlerRegistry
         'fake_poop' => FakePoopHandler::class,
         'laxative' => LaxativeHandler::class,
         'copycat' => CopycatHandler::class,
-        'anonymous_tip' => AnonymousTipHandler::class,
         'the_insider' => TheInsiderHandler::class,
         'double_or_nothing' => DoubleOrNothingHandler::class,
         'prune_juice' => PruneJuiceHandler::class,

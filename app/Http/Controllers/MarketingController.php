@@ -20,4 +20,9 @@ class MarketingController extends Controller
     {
         return view('marketing.terms');
     }
+
+    public function join(string $code): View
+    {
+        return view('marketing.join', ['code' => strtoupper($code)]);
+    }
 }

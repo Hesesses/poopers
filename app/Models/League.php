@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Str;
 
 class League extends Model
 {
@@ -79,8 +78,13 @@ class League extends Model
 
     public static function generateInviteCode(): string
     {
+        $characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
         do {
-            $code = strtoupper(Str::random(6));
+            $code = '';
+            for ($i = 0; $i < 6; $i++) {
+                $code .= $characters[random_int(0, strlen($characters) - 1)];
+            }
         } while (self::where('invite_code', $code)->exists());
 
         return $code;
