@@ -25,7 +25,7 @@ class NotificationController extends Controller
     {
         $validated = $request->validate([
             'notification_ids' => ['required', 'array'],
-            'notification_ids.*' => ['uuid'],
+            'notification_ids.*' => ['integer'],
         ]);
 
         Notification::query()

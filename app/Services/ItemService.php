@@ -83,6 +83,21 @@ class ItemService
             throw new ItemAlreadyUsedTodayException('Your items are blocked!');
         }
 
+        // One item per day limit (unless handler bypasses it)
+        if (! $handler->bypassesDailyLimit()) {
+            $usedToday = UserItem::query()
+                ->where('user_id', $user->id)
+                ->where('league_id', $league->id)
+                ->whereNotNull('used_at')
+                ->whereDate('used_at', now()->toDateString())
+                ->where('id', '!=', $userItem->id)
+                ->exists();
+
+            if ($usedToday) {
+                throw new ItemAlreadyUsedTodayException('You have already used an item today.');
+            }
+        }
+
         // Custom handler validation
         $handler->validate($userItem, $user, $target, $league);
 

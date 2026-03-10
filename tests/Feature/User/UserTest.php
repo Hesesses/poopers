@@ -5,7 +5,7 @@ it('returns user stats', function () {
 
     $this->getJson('/api/user/stats')
         ->assertOk()
-        ->assertJsonStructure(['data' => ['total_wins', 'total_losses', 'total_steps']]);
+        ->assertJsonStructure(['total_wins', 'total_losses', 'total_steps']);
 });
 
 it('updates profile', function () {

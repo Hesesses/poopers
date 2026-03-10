@@ -53,7 +53,7 @@ class DraftController extends Controller
         $this->authorize('viewDrafts', $league);
 
         $validated = $request->validate([
-            'item_id' => ['required', 'uuid', 'exists:items,id'],
+            'item_id' => ['required', 'integer', 'exists:items,id'],
         ]);
 
         $item = Item::query()->findOrFail($validated['item_id']);

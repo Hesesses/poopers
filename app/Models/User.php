@@ -85,6 +85,10 @@ class User extends Authenticatable
 
     public function isPro(): bool
     {
+        if ($this->is_pro && $this->pro_expires_at && $this->pro_expires_at->isFuture()) {
+            return true;
+        }
+
         return $this->subscriptions()
             ->where('status', 'active')
             ->where(function ($query) {

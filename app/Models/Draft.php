@@ -44,7 +44,7 @@ class Draft extends Model
         return $this->hasMany(DraftPick::class);
     }
 
-    public function currentPickerUserId(): ?string
+    public function currentPickerUserId(): ?int
     {
         if ($this->current_pick_index >= count($this->pick_order)) {
             return null;
