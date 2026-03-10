@@ -77,25 +77,42 @@ class NotificationService
 
     public function sendSilentPush(): void
     {
-        try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Key '.config('onesignal.rest_api_key'),
-            ])
-                ->post(config('onesignal.rest_api_url').'/notifications', [
-                    'app_id' => config('onesignal.app_id'),
-                    'included_segments' => ['All'],
-                    'content_available' => true,
-                    'data' => ['sync_type' => 'steps'],
-                ])
-                ->throw();
+        $externalIds = User::pluck('id')
+            ->map(fn ($id) => "user-{$id}")
+            ->values()
+            ->all();
 
-            Log::info('OneSignal silent push sent', [
-                'response' => $response->json(),
-            ]);
-        } catch (\Throwable $e) {
-            Log::error('OneSignal silent push failed', [
-                'error' => $e->getMessage(),
-            ]);
+        if (empty($externalIds)) {
+            return;
+        }
+
+        // OneSignal allows max 2000 aliases per request
+        $chunks = array_chunk($externalIds, 2000);
+
+        foreach ($chunks as $chunk) {
+            try {
+                $response = Http::withHeaders([
+                    'Authorization' => 'Key '.config('onesignal.rest_api_key'),
+                ])
+                    ->post(config('onesignal.rest_api_url').'/notifications', [
+                        'app_id' => config('onesignal.app_id'),
+                        'include_aliases' => ['external_id' => $chunk],
+                        'target_channel' => 'push',
+                        'content_available' => true,
+                        'apns_push_type_override' => 'background',
+                        'data' => ['sync_type' => 'steps'],
+                    ])
+                    ->throw();
+
+                Log::info('OneSignal silent push sent', [
+                    'response' => $response->json(),
+                    'user_count' => count($chunk),
+                ]);
+            } catch (\Throwable $e) {
+                Log::error('OneSignal silent push failed', [
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
     }
 }
