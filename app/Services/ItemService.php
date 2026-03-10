@@ -43,21 +43,6 @@ class ItemService
             throw new ItemAlreadyUsedTodayException('This item has expired.');
         }
 
-        // Check daily limit (unless handler bypasses it)
-        if (! $handler->bypassesDailyLimit()) {
-            $usedToday = UserItem::query()
-                ->where('user_id', $user->id)
-                ->where('league_id', $league->id)
-                ->whereNotNull('used_at')
-                ->whereDate('used_at', now()->toDateString())
-                ->where('id', '!=', $userItem->id)
-                ->exists();
-
-            if ($usedToday) {
-                throw new ItemAlreadyUsedTodayException('You can only use 1 item per day.');
-            }
-        }
-
         // PRO gating: Rare+ requires Pro
         if (in_array($item->rarity, [ItemRarity::Rare, ItemRarity::Epic, ItemRarity::Legendary]) && ! $user->isPro()) {
             throw new ProRequiredException('This item requires a Pro subscription.');
