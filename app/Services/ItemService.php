@@ -224,28 +224,30 @@ class ItemService
             );
         }
 
-        // Notify other league members
-        $attackerName = $isAnonymous ? 'Someone' : $user->full_name;
-        $itemName = $effect->userItem->item->name;
-        $excludeIds = [$user->id];
-        if ($target && $target->id !== $user->id) {
-            $excludeIds[] = $target->id;
-        }
+        // Notify other league members (only for public items)
+        if ($effect->userItem->item->is_public) {
+            $attackerName = $isAnonymous ? 'Someone' : $user->full_name;
+            $itemName = $effect->userItem->item->name;
+            $excludeIds = [$user->id];
+            if ($target && $target->id !== $user->id) {
+                $excludeIds[] = $target->id;
+            }
 
-        $otherMembers = $league->members()->whereNotIn('users.id', $excludeIds)->get();
-        $title = 'Item Used!';
-        $body = $target && $target->id !== $user->id
-            ? "{$attackerName} used {$itemName} on {$target->full_name}!"
-            : "{$attackerName} used {$itemName}!";
+            $otherMembers = $league->members()->whereNotIn('users.id', $excludeIds)->get();
+            $title = 'Item Used!';
+            $body = $target && $target->id !== $user->id
+                ? "{$attackerName} used {$itemName} on {$target->full_name}!"
+                : "{$attackerName} used {$itemName}!";
 
-        foreach ($otherMembers as $member) {
-            $this->notificationService->create(
-                $member,
-                $league,
-                'item_used',
-                $title,
-                $body,
-            );
+            foreach ($otherMembers as $member) {
+                $this->notificationService->create(
+                    $member,
+                    $league,
+                    'item_used',
+                    $title,
+                    $body,
+                );
+            }
         }
     }
 

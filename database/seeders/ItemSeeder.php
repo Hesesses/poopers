@@ -21,6 +21,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Common,
                 'effect' => ['type' => 'reduce_steps', 'value' => 5, 'unit' => 'percent'],
                 'icon' => '💣',
+                'is_public' => true,
             ],
             [
                 'slug' => 'toilet_paper_trail',
@@ -30,6 +31,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Common,
                 'effect' => ['type' => 'expose_steps'],
                 'icon' => '🧻',
+                'is_public' => true,
             ],
             [
                 'slug' => 'skid_mark',
@@ -39,6 +41,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Common,
                 'effect' => ['type' => 'reduce_steps', 'value' => 3, 'unit' => 'percent'],
                 'icon' => '👣',
+                'is_public' => true,
             ],
             [
                 'slug' => 'stink_cloud',
@@ -48,6 +51,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Uncommon,
                 'effect' => ['type' => 'reduce_steps', 'value' => 2, 'unit' => 'percent'],
                 'icon' => '☁️',
+                'is_public' => true,
             ],
             [
                 'slug' => 'clogged_pipes',
@@ -57,6 +61,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Uncommon,
                 'effect' => ['type' => 'block_items'],
                 'icon' => '🪠',
+                'is_public' => true,
             ],
             [
                 'slug' => 'the_brown_out',
@@ -66,6 +71,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Uncommon,
                 'effect' => ['type' => 'hide_ranking'],
                 'icon' => '🌑',
+                'is_public' => true,
             ],
             [
                 'slug' => 'courtesy_flush',
@@ -75,6 +81,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Rare,
                 'effect' => ['type' => 'remove_defense'],
                 'icon' => '🚿',
+                'is_public' => true,
             ],
             [
                 'slug' => 'sewer_backup',
@@ -84,6 +91,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Rare,
                 'effect' => ['type' => 'reverse_buff'],
                 'icon' => '🕳️',
+                'is_public' => true,
             ],
             [
                 'slug' => 'diarrhea_attack',
@@ -93,6 +101,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Rare,
                 'effect' => ['type' => 'steal_steps', 'value' => 8, 'unit' => 'percent'],
                 'icon' => '💩',
+                'is_public' => true,
             ],
             [
                 'slug' => 'porta_potty_trap',
@@ -102,6 +111,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Rare,
                 'effect' => ['type' => 'set_trap', 'penalty' => 5],
                 'icon' => '🚽',
+                'is_public' => true,
             ],
             [
                 'slug' => 'upper_decker',
@@ -111,6 +121,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Epic,
                 'effect' => ['type' => 'swap_placement'],
                 'icon' => '🪤',
+                'is_public' => true,
             ],
             [
                 'slug' => 'explosive_diarrhea',
@@ -120,6 +131,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Epic,
                 'effect' => ['type' => 'reduce_steps', 'value' => 10, 'unit' => 'percent', 'splash' => 5],
                 'icon' => '🌋',
+                'is_public' => true,
             ],
             [
                 'slug' => 'poop_streak',
@@ -129,6 +141,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Epic,
                 'effect' => ['type' => 'double_streak'],
                 'icon' => '📈',
+                'is_public' => true,
             ],
             [
                 'slug' => 'septic_tank',
@@ -138,6 +151,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Legendary,
                 'effect' => ['type' => 'scaling_reduction', 'per' => 1000, 'max' => 15],
                 'icon' => '🛢️',
+                'is_public' => true,
             ],
 
             // === Defensive (10) ===
@@ -149,6 +163,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Common,
                 'effect' => ['type' => 'block_attack'],
                 'icon' => '🌸',
+                'is_public' => false,
             ],
             [
                 'slug' => 'plunger',
@@ -158,6 +173,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Common,
                 'effect' => ['type' => 'remove_effect'],
                 'icon' => '🪠',
+                'is_public' => true,
             ],
             [
                 'slug' => 'wet_wipe',
@@ -167,6 +183,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Uncommon,
                 'effect' => ['type' => 'reduce_damage'],
                 'icon' => '🧻',
+                'is_public' => false,
             ],
             [
                 'slug' => 'odor_shield',
@@ -176,6 +193,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Uncommon,
                 'effect' => ['type' => 'hide_steps_from_attacker'],
                 'icon' => '🛡️',
+                'is_public' => false,
             ],
             [
                 'slug' => 'bidet_shield',
@@ -185,6 +203,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Rare,
                 'effect' => ['type' => 'reflect_attack'],
                 'icon' => '🔄',
+                'is_public' => false,
             ],
             [
                 'slug' => 'decoy_dump',
@@ -194,6 +213,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Rare,
                 'effect' => ['type' => 'dodge'],
                 'icon' => '🎯',
+                'is_public' => false,
             ],
             [
                 'slug' => 'hazmat_suit',
@@ -203,6 +223,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Epic,
                 'effect' => ['type' => 'block_all_attacks'],
                 'icon' => '🦺',
+                'is_public' => false,
             ],
             [
                 'slug' => 'probiotic_shield',
@@ -212,6 +233,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Epic,
                 'effect' => ['type' => 'reactive_bonus', 'value' => 2, 'unit' => 'percent'],
                 'icon' => '💊',
+                'is_public' => false,
             ],
             [
                 'slug' => 'golden_throne',
@@ -221,6 +243,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Legendary,
                 'effect' => ['type' => 'negate_and_bonus', 'value' => 3, 'unit' => 'percent'],
                 'icon' => '👑',
+                'is_public' => false,
             ],
             [
                 'slug' => 'titanium_toilet',
@@ -230,6 +253,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Legendary,
                 'effect' => ['type' => 'block_all_and_bonus', 'value' => 3, 'unit' => 'percent'],
                 'icon' => '🏆',
+                'is_public' => false,
             ],
 
             // === Strategic (14) ===
@@ -241,6 +265,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Common,
                 'effect' => ['type' => 'spy_single'],
                 'icon' => '🔭',
+                'is_public' => true,
             ],
             [
                 'slug' => 'fiber_boost',
@@ -250,6 +275,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Common,
                 'effect' => ['type' => 'boost_steps', 'value' => 5, 'unit' => 'percent'],
                 'icon' => '🥦',
+                'is_public' => true,
             ],
             [
                 'slug' => 'morning_coffee',
@@ -259,6 +285,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Common,
                 'effect' => ['type' => 'timed_boost', 'multiplier' => 1.1, 'before_hour' => 12],
                 'icon' => '☕',
+                'is_public' => true,
             ],
             [
                 'slug' => 'peek_a_poo',
@@ -268,6 +295,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Common,
                 'effect' => ['type' => 'spy_self_rank'],
                 'icon' => '👀',
+                'is_public' => true,
             ],
             [
                 'slug' => 'fake_poop',
@@ -277,6 +305,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Uncommon,
                 'effect' => ['type' => 'fake_steps', 'variance' => 30],
                 'icon' => '🎭',
+                'is_public' => false,
             ],
             [
                 'slug' => 'laxative',
@@ -286,6 +315,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Uncommon,
                 'effect' => ['type' => 'force_reveal'],
                 'icon' => '💊',
+                'is_public' => true,
             ],
             [
                 'slug' => 'copycat',
@@ -295,6 +325,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Rare,
                 'effect' => ['type' => 'copy_item'],
                 'icon' => '🐱',
+                'is_public' => true,
             ],
             [
                 'slug' => 'anonymous_tip',
@@ -304,6 +335,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Rare,
                 'effect' => ['type' => 'anonymous_mode'],
                 'icon' => '🕶️',
+                'is_public' => false,
             ],
             [
                 'slug' => 'the_insider',
@@ -313,6 +345,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Rare,
                 'effect' => ['type' => 'spy_inventory'],
                 'icon' => '🕵️',
+                'is_public' => true,
             ],
             [
                 'slug' => 'double_or_nothing',
@@ -322,6 +355,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Epic,
                 'effect' => ['type' => 'coin_flip', 'win' => 10, 'lose' => 10],
                 'icon' => '🎰',
+                'is_public' => true,
             ],
             [
                 'slug' => 'prune_juice',
@@ -331,6 +365,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Epic,
                 'effect' => ['type' => 'force_use'],
                 'icon' => '🧃',
+                'is_public' => true,
             ],
             [
                 'slug' => 'crystal_ball',
@@ -340,6 +375,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Epic,
                 'effect' => ['type' => 'projection'],
                 'icon' => '🔮',
+                'is_public' => true,
             ],
             [
                 'slug' => 'toilet_swap',
@@ -349,6 +385,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Legendary,
                 'effect' => ['type' => 'steal_item'],
                 'icon' => '🔀',
+                'is_public' => true,
             ],
             [
                 'slug' => 'royal_flush',
@@ -358,6 +395,7 @@ class ItemSeeder extends Seeder
                 'rarity' => ItemRarity::Legendary,
                 'effect' => ['type' => 'swap_first_last'],
                 'icon' => '🃏',
+                'is_public' => true,
             ],
         ];
 

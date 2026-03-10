@@ -16,6 +16,7 @@ class Item extends Model
         'rarity',
         'effect',
         'icon',
+        'is_public',
     ];
 
     protected function casts(): array
@@ -24,6 +25,7 @@ class Item extends Model
             'type' => ItemType::class,
             'rarity' => ItemRarity::class,
             'effect' => 'array',
+            'is_public' => 'boolean',
         ];
     }
 }
