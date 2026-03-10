@@ -236,6 +236,72 @@ it('TakeNoonSnapshots job creates snapshots at noon', function () {
     expect($snapshots[2]->position)->toBe(3);
 });
 
+it('spy_all_steps effect shows all live steps during hidden phase', function () {
+    Carbon::setTestNow(Carbon::parse('2026-03-10 10:00:00', 'UTC'));
+
+    [$users, $league] = createLeagueWithMembers(3);
+    createStepsForUsers($users, [5000, 8000, 3000]);
+
+    // User 0 (current user) activates All Seeing Eye on self
+    createItemWithEffect($users, $league, ItemEffectType::SpyAllSteps, 'All Seeing Eye', 0, 0);
+
+    $response = $this->getJson("/api/leagues/{$league->id}/today");
+
+    $response->assertSuccessful();
+    expect($response->json('visibility'))->toBe('hidden');
+
+    $standings = $response->json('standings');
+
+    // Self should see own steps as normal
+    $self = collect($standings)->firstWhere('is_self', true);
+    expect($self['show_steps'])->toBeTrue();
+    expect($self['own_steps'])->toBe(5000);
+
+    // All other members should have visible live steps
+    $others = collect($standings)->where('is_self', false)->values();
+    expect($others[0]['show_steps'])->toBeTrue();
+    expect($others[0]['steps'])->toBeGreaterThan(0);
+    expect($others[1]['show_steps'])->toBeTrue();
+    expect($others[1]['steps'])->toBeGreaterThan(0);
+});
+
+it('spy_all_steps effect shows all live steps during evening phase', function () {
+    Carbon::setTestNow(Carbon::parse('2026-03-10 20:00:00', 'UTC'));
+
+    [$users, $league] = createLeagueWithMembers(2);
+    createStepsForUsers($users, [5000, 8000]);
+
+    createItemWithEffect($users, $league, ItemEffectType::SpyAllSteps, 'All Seeing Eye Eve', 0, 0);
+
+    $response = $this->getJson("/api/leagues/{$league->id}/today");
+
+    $response->assertSuccessful();
+    expect($response->json('visibility'))->toBe('evening');
+
+    $standings = $response->json('standings');
+    $other = collect($standings)->firstWhere('is_self', false);
+    expect($other['show_steps'])->toBeTrue();
+    expect($other['steps'])->toBe(8000);
+});
+
+it('spy_all_steps does not reveal steps to users without the effect', function () {
+    Carbon::setTestNow(Carbon::parse('2026-03-10 10:00:00', 'UTC'));
+
+    [$users, $league] = createLeagueWithMembers(2);
+    createStepsForUsers($users, [5000, 8000]);
+
+    // User 1 has the effect, but user 0 is the current user (no effect)
+    createItemWithEffect($users, $league, ItemEffectType::SpyAllSteps, 'All Seeing Eye Other', 1, 1);
+
+    $response = $this->getJson("/api/leagues/{$league->id}/today");
+
+    $response->assertSuccessful();
+    $standings = $response->json('standings');
+    $other = collect($standings)->firstWhere('is_self', false);
+    expect($other['show_steps'])->toBeFalse();
+    expect($other['steps'])->toBeNull();
+});
+
 it('TakeNoonSnapshots job is idempotent', function () {
     Carbon::setTestNow(Carbon::parse('2026-03-10 12:30:00', 'UTC'));
 

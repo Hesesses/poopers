@@ -387,6 +387,16 @@ class ItemSeeder extends Seeder
                 'icon' => '🃏',
                 'is_public' => true,
             ],
+            [
+                'slug' => 'all_seeing_eye',
+                'name' => 'All Seeing Eye',
+                'description' => "See everyone's exact step count in real time for the rest of the day",
+                'type' => ItemType::Strategic,
+                'rarity' => ItemRarity::Epic,
+                'effect' => ['type' => 'spy_all_steps'],
+                'icon' => '👁️',
+                'is_public' => false,
+            ],
         ];
 
         foreach ($items as $item) {

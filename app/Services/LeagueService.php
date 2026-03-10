@@ -2,14 +2,23 @@
 
 namespace App\Services;
 
+use App\Enums\ItemEffectStatus;
+use App\Enums\ItemSource;
 use App\Enums\LeagueMemberRole;
+use App\Models\Item;
+use App\Models\ItemEffect;
 use App\Models\League;
 use App\Models\LeagueMember;
 use App\Models\User;
+use App\Models\UserItem;
 use Illuminate\Validation\ValidationException;
 
 class LeagueService
 {
+    public function __construct(
+        private ItemService $itemService,
+    ) {}
+
     public function create(User $user, string $name, string $icon = '💩', string $timezone = 'UTC'): League
     {
         $this->validateFreeUserLeagueLimit($user);
@@ -84,6 +93,8 @@ class LeagueService
             'user_id' => $user->id,
             'role' => LeagueMemberRole::Member,
         ]);
+
+        $this->grantWelcomeItems($user, $league);
     }
 
     public function leave(User $user, League $league): void
@@ -155,6 +166,43 @@ class LeagueService
         $league->update(['invite_code' => $code]);
 
         return $code;
+    }
+
+    private function grantWelcomeItems(User $user, League $league): void
+    {
+        $alreadyAwarded = UserItem::query()
+            ->where('user_id', $user->id)
+            ->where('league_id', $league->id)
+            ->where('source', ItemSource::Welcome)
+            ->exists();
+
+        if ($alreadyAwarded) {
+            return;
+        }
+
+        $item = Item::query()->where('slug', 'all_seeing_eye')->first();
+
+        if ($item) {
+            $userItem = UserItem::query()->create([
+                'user_id' => $user->id,
+                'league_id' => $league->id,
+                'item_id' => $item->id,
+                'source' => ItemSource::Welcome,
+                'expires_at' => now()->endOfDay(),
+                'used_at' => now(),
+                'used_on_user_id' => $user->id,
+            ]);
+
+            ItemEffect::query()->create([
+                'user_item_id' => $userItem->id,
+                'target_user_id' => $user->id,
+                'league_id' => $league->id,
+                'date' => now()->toDateString(),
+                'status' => ItemEffectStatus::Applied,
+            ]);
+        }
+
+        $this->itemService->awardWelcomePack($user, $league);
     }
 
     private function validateFreeUserLeagueLimit(User $user): void

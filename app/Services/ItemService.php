@@ -129,7 +129,7 @@ class ItemService
             ->where('expires_at', '>', now())
             ->count();
 
-        $limit = $user->isPro() ? 10 : 3;
+        $limit = $user->isPro() ? 20 : 5;
 
         if ($unusedCount >= $limit) {
             throw new InventoryFullException("Inventory full ({$limit} items max).");
@@ -249,6 +249,74 @@ class ItemService
                 );
             }
         }
+    }
+
+    public function awardWelcomePack(User $user, League $league): void
+    {
+        $distribution = [
+            [ItemType::Offensive, 2],
+            [ItemType::Defensive, 2],
+            [ItemType::Strategic, 1],
+        ];
+
+        $allowedRarities = $user->isPro()
+            ? ItemRarity::cases()
+            : [ItemRarity::Common, ItemRarity::Uncommon];
+
+        foreach ($distribution as [$type, $count]) {
+            for ($i = 0; $i < $count; $i++) {
+                $item = $this->getRandomItemByTypeAndRarity($type, $allowedRarities);
+
+                if (! $item) {
+                    continue;
+                }
+
+                UserItem::query()->create([
+                    'user_id' => $user->id,
+                    'league_id' => $league->id,
+                    'item_id' => $item->id,
+                    'source' => ItemSource::Welcome,
+                    'expires_at' => now()->addDays(7),
+                ]);
+            }
+        }
+    }
+
+    private function getRandomItemByTypeAndRarity(ItemType $type, array $allowedRarities): ?Item
+    {
+        $rarity = $this->rollRarity($allowedRarities);
+
+        return Item::query()
+            ->where('type', $type)
+            ->where('rarity', $rarity)
+            ->where('slug', '!=', 'all_seeing_eye')
+            ->inRandomOrder()
+            ->first()
+            ?? Item::query()
+                ->where('type', $type)
+                ->where('slug', '!=', 'all_seeing_eye')
+                ->whereIn('rarity', $allowedRarities)
+                ->inRandomOrder()
+                ->first();
+    }
+
+    private function rollRarity(array $allowedRarities): ItemRarity
+    {
+        $roll = random_int(1, 100);
+
+        $rarity = match (true) {
+            $roll <= 60 => ItemRarity::Common,
+            $roll <= 90 => ItemRarity::Uncommon,
+            $roll <= 97 => ItemRarity::Rare,
+            $roll <= 99 => ItemRarity::Epic,
+            default => ItemRarity::Legendary,
+        };
+
+        if (! in_array($rarity, $allowedRarities)) {
+            return $allowedRarities[array_rand($allowedRarities)];
+        }
+
+        return $rarity;
     }
 
     private function getRandomItemByRarity(): Item

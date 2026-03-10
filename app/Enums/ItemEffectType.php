@@ -39,4 +39,5 @@ enum ItemEffectType: string
     case Projection = 'projection';
     case StealItem = 'steal_item';
     case SwapFirstLast = 'swap_first_last';
+    case SpyAllSteps = 'spy_all_steps';
 }

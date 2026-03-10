@@ -88,7 +88,10 @@ class StandingsService
             }
         }
 
-        $standings = $members->map(function (User $member) use ($liveSteps, $snapshots, $currentUser, $phase, $activeEffects) {
+        // Check once: does current user have All Seeing Eye active?
+        $hasAllSeeingEye = $this->hasEffectOnSelf($activeEffects, $currentUser->id, ItemEffectType::SpyAllSteps);
+
+        $standings = $members->map(function (User $member) use ($liveSteps, $snapshots, $currentUser, $phase, $activeEffects, $hasAllSeeingEye) {
             $isSelf = $member->id === $currentUser->id;
             $liveMemberSteps = $liveSteps->get($member->id);
             $liveRealSteps = $liveMemberSteps?->steps ?? 0;
@@ -115,24 +118,31 @@ class StandingsService
             $displaySteps = $sourceSteps;
             $displayModifiedSteps = $sourceModifiedSteps;
 
-            // 2. expose_steps → force show LIVE steps
+            // 2. spy_all_steps → force show LIVE steps for all members
+            if ($hasAllSeeingEye && ! $isSelf) {
+                $showSteps = true;
+                $displaySteps = $liveRealSteps;
+                $displayModifiedSteps = $liveRealModifiedSteps;
+            }
+
+            // 3. expose_steps → force show LIVE steps (overrides snapshot too)
             if ($this->hasEffect($activeEffects, $member->id, ItemEffectType::ExposeSteps)) {
                 $showSteps = true;
                 $displaySteps = $liveRealSteps;
                 $displayModifiedSteps = $liveRealModifiedSteps;
             }
 
-            // 3. hide_steps_from_attacker → hide steps from specific viewer
+            // 4. hide_steps_from_attacker → hide steps from specific viewer
             if (! $isSelf && $this->isHiddenFromUser($activeEffects, $member->id, $currentUser->id)) {
                 $showSteps = false;
             }
 
-            // 4. hide_ranking → hide position from target
+            // 5. hide_ranking → hide position from target
             if ($isSelf && $this->hasEffect($activeEffects, $currentUser->id, ItemEffectType::HideRanking)) {
                 $showPositions = false;
             }
 
-            // 5. fake_steps → apply variance when steps visible to others
+            // 6. fake_steps → apply variance when steps visible to others
             if (! $isSelf && $showSteps && $this->hasEffectOnSelf($activeEffects, $member->id, ItemEffectType::FakeSteps)) {
                 $variance = 30;
                 $fakeMultiplier = 1 + (random_int(-$variance, $variance) / 100);

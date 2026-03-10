@@ -27,6 +27,7 @@ use App\Services\Items\Offensive\StinkCloudHandler;
 use App\Services\Items\Offensive\TheBrownOutHandler;
 use App\Services\Items\Offensive\ToiletPaperTrailHandler;
 use App\Services\Items\Offensive\UpperDeckerHandler;
+use App\Services\Items\Strategic\AllSeeingEyeHandler;
 use App\Services\Items\Strategic\AnonymousTipHandler;
 use App\Services\Items\Strategic\CopycatHandler;
 use App\Services\Items\Strategic\CrystalBallHandler;
@@ -89,6 +90,7 @@ class ItemHandlerRegistry
         'crystal_ball' => CrystalBallHandler::class,
         'toilet_swap' => ToiletSwapHandler::class,
         'royal_flush' => RoyalFlushHandler::class,
+        'all_seeing_eye' => AllSeeingEyeHandler::class,
     ];
 
     public function resolve(Item $item): ItemHandlerInterface
