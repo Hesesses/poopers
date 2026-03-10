@@ -37,11 +37,6 @@ abstract class BaseItemHandler implements ItemHandlerInterface
 
     public function resolveAtMidnight(ItemEffect $effect, League $league): void {}
 
-    public function bypassesDailyLimit(): bool
-    {
-        return false;
-    }
-
     public function getTargetNotification(ItemEffect $effect, User $attacker): ?array
     {
         return null;

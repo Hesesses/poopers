@@ -133,7 +133,7 @@ it('cannot use expired item', function () {
     ])->assertUnprocessable();
 });
 
-it('one item per day limit', function () {
+it('allows multiple items per day', function () {
     [$user, $league] = createLeagueWithMember();
     $target = User::factory()->create();
     LeagueMember::create([
@@ -144,7 +144,6 @@ it('one item per day limit', function () {
 
     $items = Item::where('type', ItemType::Strategic)->limit(2)->get();
 
-    // Use first item
     $userItem1 = UserItem::create([
         'user_id' => $user->id,
         'league_id' => $league->id,
@@ -156,7 +155,6 @@ it('one item per day limit', function () {
         'target_user_id' => $target->id,
     ])->assertOk();
 
-    // Try second item same day
     $userItem2 = UserItem::create([
         'user_id' => $user->id,
         'league_id' => $league->id,
@@ -166,7 +164,7 @@ it('one item per day limit', function () {
     ]);
     $this->postJson("/api/leagues/{$league->id}/items/{$userItem2->id}/use", [
         'target_user_id' => $target->id,
-    ])->assertUnprocessable();
+    ])->assertOk();
 });
 
 it('non-member gets 403', function () {

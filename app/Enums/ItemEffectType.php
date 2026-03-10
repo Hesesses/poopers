@@ -7,7 +7,6 @@ enum ItemEffectType: string
     case SpySingle = 'spy_single';
     case SpyInventory = 'spy_inventory';
     case SpySelfRank = 'spy_self_rank';
-    case BlockAttack = 'block_attack';
     case BlockAllAttacks = 'block_all_attacks';
     case BlockAllAndBonus = 'block_all_and_bonus';
     case ReduceSteps = 'reduce_steps';

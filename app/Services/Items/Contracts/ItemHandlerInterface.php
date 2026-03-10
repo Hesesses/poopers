@@ -26,8 +26,6 @@ interface ItemHandlerInterface
 
     public function resolveAtMidnight(ItemEffect $effect, League $league): void;
 
-    public function bypassesDailyLimit(): bool;
-
     /**
      * @return array{title: string, body: string}|null
      */

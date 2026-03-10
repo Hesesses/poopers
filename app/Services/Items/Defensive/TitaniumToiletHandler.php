@@ -3,6 +3,7 @@
 namespace App\Services\Items\Defensive;
 
 use App\Enums\ItemEffectStatus;
+use App\Enums\ItemType;
 use App\Models\ItemEffect;
 use App\Models\League;
 use App\Models\User;
@@ -23,8 +24,17 @@ class TitaniumToiletHandler extends BaseItemHandler
 
     public function execute(UserItem $userItem, User $user, ?User $target, League $league): ItemEffect
     {
+        ItemEffect::query()
+            ->where('target_user_id', $user->id)
+            ->where('league_id', $league->id)
+            ->where('date', now()->toDateString())
+            ->where('status', ItemEffectStatus::Applied)
+            ->whereHas('userItem.item', fn ($q) => $q->where('type', ItemType::Offensive))
+            ->update(['status' => ItemEffectStatus::Cancelled]);
+
         $effect = $this->createEffect($userItem, $user, $league);
 
+        // Create +3% boost effect
         ItemEffect::query()->create([
             'user_item_id' => $userItem->id,
             'target_user_id' => $user->id,
@@ -42,7 +52,7 @@ class TitaniumToiletHandler extends BaseItemHandler
     {
         return [
             'title' => 'Titanium Toilet',
-            'body' => 'Titanium Toilet activated! All attacks blocked + 3% boost.',
+            'body' => 'All negative effects removed and +3% step boost gained!',
         ];
     }
 }

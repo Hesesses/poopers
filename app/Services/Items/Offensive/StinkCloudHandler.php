@@ -2,13 +2,11 @@
 
 namespace App\Services\Items\Offensive;
 
-use App\Enums\ItemEffectStatus;
 use App\Models\ItemEffect;
 use App\Models\League;
 use App\Models\User;
 use App\Models\UserItem;
 use App\Services\Items\BaseItemHandler;
-use App\Services\Items\DefenseResolver;
 
 class StinkCloudHandler extends BaseItemHandler
 {
@@ -25,19 +23,12 @@ class StinkCloudHandler extends BaseItemHandler
         $firstEffect = null;
 
         foreach ($members as $member) {
-            $effect = $this->createEffect($userItem, $member, $league, ItemEffectStatus::Pending);
-
-            $defense = app(DefenseResolver::class)->resolve($effect, $userItem, $member, $league);
-
-            if (! $defense->blocked && ! $defense->reflected && ! $defense->missed) {
-                $effect->update(['status' => ItemEffectStatus::Applied]);
-                $this->recalculateSteps($member);
-            }
-
+            $effect = $this->createEffect($userItem, $member, $league);
+            $this->recalculateSteps($member);
             $firstEffect ??= $effect;
         }
 
-        return $firstEffect->fresh();
+        return $firstEffect;
     }
 
     public function getTargetNotification(ItemEffect $effect, User $attacker): ?array

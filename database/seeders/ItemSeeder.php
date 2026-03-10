@@ -154,21 +154,11 @@ class ItemSeeder extends Seeder
                 'is_public' => true,
             ],
 
-            // === Defensive (10) ===
-            [
-                'slug' => 'air_freshener',
-                'name' => 'Air Freshener',
-                'description' => 'Block the next incoming attack today',
-                'type' => ItemType::Defensive,
-                'rarity' => ItemRarity::Common,
-                'effect' => ['type' => 'block_attack'],
-                'icon' => '🌸',
-                'is_public' => false,
-            ],
+            // === Defensive (9) ===
             [
                 'slug' => 'plunger',
                 'name' => 'Plunger',
-                'description' => 'Remove one active negative effect from yourself',
+                'description' => 'Remove one active negative effect',
                 'type' => ItemType::Defensive,
                 'rarity' => ItemRarity::Common,
                 'effect' => ['type' => 'remove_effect'],
@@ -178,7 +168,7 @@ class ItemSeeder extends Seeder
             [
                 'slug' => 'wet_wipe',
                 'name' => 'Wet Wipe',
-                'description' => 'Reduce the damage of the next attack by 50%',
+                'description' => "Reduce an active negative effect's damage by 50%",
                 'type' => ItemType::Defensive,
                 'rarity' => ItemRarity::Uncommon,
                 'effect' => ['type' => 'reduce_damage'],
@@ -188,7 +178,7 @@ class ItemSeeder extends Seeder
             [
                 'slug' => 'odor_shield',
                 'name' => 'Odor Shield',
-                'description' => 'Hide your steps from anyone who attacks you today',
+                'description' => 'Remove an active negative effect and hide your steps from the attacker',
                 'type' => ItemType::Defensive,
                 'rarity' => ItemRarity::Uncommon,
                 'effect' => ['type' => 'hide_steps_from_attacker'],
@@ -198,7 +188,7 @@ class ItemSeeder extends Seeder
             [
                 'slug' => 'bidet_shield',
                 'name' => 'Bidet Shield',
-                'description' => 'Reflect the next incoming attack back to the attacker',
+                'description' => 'Reflect an active negative effect back to the attacker',
                 'type' => ItemType::Defensive,
                 'rarity' => ItemRarity::Rare,
                 'effect' => ['type' => 'reflect_attack'],
@@ -208,7 +198,7 @@ class ItemSeeder extends Seeder
             [
                 'slug' => 'decoy_dump',
                 'name' => 'Decoy Dump',
-                'description' => '50% chance to dodge the next incoming attack',
+                'description' => '50% chance to cancel an active negative effect',
                 'type' => ItemType::Defensive,
                 'rarity' => ItemRarity::Rare,
                 'effect' => ['type' => 'dodge'],
@@ -218,7 +208,7 @@ class ItemSeeder extends Seeder
             [
                 'slug' => 'hazmat_suit',
                 'name' => 'Hazmat Suit',
-                'description' => 'Block all incoming attacks today',
+                'description' => 'Remove all active negative effects',
                 'type' => ItemType::Defensive,
                 'rarity' => ItemRarity::Epic,
                 'effect' => ['type' => 'block_all_attacks'],
@@ -228,7 +218,7 @@ class ItemSeeder extends Seeder
             [
                 'slug' => 'probiotic_shield',
                 'name' => 'Probiotic Shield',
-                'description' => 'Gain +2% step boost each time you are attacked today',
+                'description' => 'Remove an active negative effect and gain +2% step boost',
                 'type' => ItemType::Defensive,
                 'rarity' => ItemRarity::Epic,
                 'effect' => ['type' => 'reactive_bonus', 'value' => 2, 'unit' => 'percent'],
@@ -238,7 +228,7 @@ class ItemSeeder extends Seeder
             [
                 'slug' => 'golden_throne',
                 'name' => 'Golden Throne',
-                'description' => 'Negate the next attack and gain a +3% step boost',
+                'description' => 'Negate an active negative effect and gain +3% step boost',
                 'type' => ItemType::Defensive,
                 'rarity' => ItemRarity::Legendary,
                 'effect' => ['type' => 'negate_and_bonus', 'value' => 3, 'unit' => 'percent'],
@@ -248,7 +238,7 @@ class ItemSeeder extends Seeder
             [
                 'slug' => 'titanium_toilet',
                 'name' => 'Titanium Toilet',
-                'description' => 'Block all attacks today and gain +3% step boost',
+                'description' => 'Remove all active negative effects and gain +3% step boost',
                 'type' => ItemType::Defensive,
                 'rarity' => ItemRarity::Legendary,
                 'effect' => ['type' => 'block_all_and_bonus', 'value' => 3, 'unit' => 'percent'],

@@ -4,7 +4,6 @@ namespace App\Services\Items;
 
 use App\Models\Item;
 use App\Services\Items\Contracts\ItemHandlerInterface;
-use App\Services\Items\Defensive\AirFreshenerHandler;
 use App\Services\Items\Defensive\BidetShieldHandler;
 use App\Services\Items\Defensive\DecoyDumpHandler;
 use App\Services\Items\Defensive\GoldenThroneHandler;
@@ -65,7 +64,6 @@ class ItemHandlerRegistry
         'septic_tank' => SepticTankHandler::class,
 
         // Defensive
-        'air_freshener' => AirFreshenerHandler::class,
         'plunger' => PlungerHandler::class,
         'wet_wipe' => WetWipeHandler::class,
         'odor_shield' => OdorShieldHandler::class,
