@@ -226,7 +226,7 @@ class ItemService
             }
         }
 
-        // Notify user
+        // Notify user (DB only, no push — they just used the item)
         $userNotification = $handler->getUserNotification($effect, $target);
         if ($userNotification) {
             $this->notificationService->create(
@@ -235,6 +235,31 @@ class ItemService
                 'item_used',
                 $userNotification['title'],
                 $userNotification['body'],
+                sendPush: false,
+            );
+        }
+
+        // Notify other league members
+        $attackerName = $isAnonymous ? 'Someone' : $user->full_name;
+        $itemName = $effect->userItem->item->name;
+        $excludeIds = [$user->id];
+        if ($target && $target->id !== $user->id) {
+            $excludeIds[] = $target->id;
+        }
+
+        $otherMembers = $league->members()->whereNotIn('users.id', $excludeIds)->get();
+        $title = 'Item Used!';
+        $body = $target && $target->id !== $user->id
+            ? "{$attackerName} used {$itemName} on {$target->full_name}!"
+            : "{$attackerName} used {$itemName}!";
+
+        foreach ($otherMembers as $member) {
+            $this->notificationService->create(
+                $member,
+                $league,
+                'item_used',
+                $title,
+                $body,
             );
         }
     }

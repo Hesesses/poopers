@@ -17,6 +17,7 @@ class NotificationService
         string $title,
         string $body,
         ?array $data = null,
+        bool $sendPush = true,
     ): Notification {
         $notification = Notification::query()->create([
             'user_id' => $user->id,
@@ -27,7 +28,9 @@ class NotificationService
             'data' => $data,
         ]);
 
-        $this->sendPush($user, $title, $body, $data);
+        if ($sendPush) {
+            $this->sendPush($user, $title, $body, $data);
+        }
 
         return $notification;
     }
