@@ -19,22 +19,37 @@ class StandingsService
     public function getMonthStandings(League $league, ?string $yearMonth = null): Collection
     {
         $leagueTime = now()->setTimezone($league->timezone);
-        $yearMonth ??= $leagueTime->format('Y-m');
-        $today = $leagueTime->toDateString();
-        $start = Carbon::parse($yearMonth.'-01')->startOfMonth();
-        $end = Carbon::parse($yearMonth.'-01')->endOfMonth();
+        $currentYearMonth = $leagueTime->format('Y-m');
 
-        return $this->getStandingsWithLiveSteps($league, $start, $end, $today);
+        if ($yearMonth === null || $yearMonth === $currentYearMonth) {
+            if ($leagueTime->day === 1) {
+                $start = $leagueTime->copy()->subMonth()->startOfMonth();
+                $end = $leagueTime->copy()->subMonth()->endOfMonth();
+            } else {
+                $start = $leagueTime->copy()->startOfMonth();
+                $end = $leagueTime->copy()->endOfMonth();
+            }
+        } else {
+            $start = Carbon::parse($yearMonth.'-01')->startOfMonth();
+            $end = Carbon::parse($yearMonth.'-01')->endOfMonth();
+        }
+
+        return $this->getCompletedStandings($league, $start, $end);
     }
 
     public function getWeekStandings(League $league): Collection
     {
         $leagueTime = now()->setTimezone($league->timezone);
-        $today = $leagueTime->toDateString();
-        $start = $leagueTime->copy()->startOfWeek();
-        $end = $leagueTime->copy()->endOfWeek();
 
-        return $this->getStandingsWithLiveSteps($league, $start, $end, $today);
+        if ($leagueTime->isMonday()) {
+            $start = $leagueTime->copy()->subWeek()->startOfWeek();
+            $end = $leagueTime->copy()->subWeek()->endOfWeek();
+        } else {
+            $start = $leagueTime->copy()->startOfWeek();
+            $end = $leagueTime->copy()->endOfWeek();
+        }
+
+        return $this->getCompletedStandings($league, $start, $end);
     }
 
     public function getYesterdayResults(League $league): Collection
@@ -206,39 +221,34 @@ class StandingsService
         ];
     }
 
-    private function getStandingsWithLiveSteps(League $league, Carbon $start, Carbon $end, string $today): Collection
+    private function getCompletedStandings(League $league, Carbon $start, Carbon $end): Collection
     {
+        $todayString = now()->setTimezone($league->timezone)->toDateString();
+
         $results = LeagueDayResult::query()
             ->where('league_id', $league->id)
             ->whereBetween('date', [$start, $end])
-            ->where('date', '!=', $today)
+            ->where('date', '!=', $todayString)
             ->with('user')
             ->get()
             ->groupBy('user_id');
 
         $members = $league->members()->get();
 
-        $todaySteps = DailySteps::query()
-            ->whereIn('user_id', $members->pluck('id'))
-            ->where('date', $today)
-            ->get()
-            ->keyBy('user_id');
-
-        return $members->map(function (User $member) use ($results, $todaySteps) {
+        return $members->map(function (User $member) use ($results) {
             $memberResults = $results->get((string) $member->id, collect());
-            $todayStep = $todaySteps->get($member->id);
 
-            if ($memberResults->isEmpty() && ! $todayStep) {
+            if ($memberResults->isEmpty()) {
                 return null;
             }
 
             return (object) [
                 'user' => $member,
-                'total_steps' => $memberResults->sum('steps') + ($todayStep?->steps ?? 0),
-                'total_modified_steps' => $memberResults->sum('modified_steps') + ($todayStep?->modified_steps ?? 0),
+                'total_steps' => $memberResults->sum('steps'),
+                'total_modified_steps' => $memberResults->sum('modified_steps'),
                 'wins' => $memberResults->where('is_winner', true)->count(),
                 'losses' => $memberResults->where('is_last', true)->count(),
-                'days_played' => $memberResults->count() + ($todayStep ? 1 : 0),
+                'days_played' => $memberResults->count(),
             ];
         })->filter()->sortByDesc('wins')->values();
     }
