@@ -389,11 +389,17 @@ class ItemSeeder extends Seeder
             ],
         ];
 
+        $slugs = [];
+
         foreach ($items as $item) {
-            Item::query()->updateOrCreate(
+            Item::withTrashed()->updateOrCreate(
                 ['slug' => $item['slug']],
-                $item,
+                $item + ['deleted_at' => null],
             );
+
+            $slugs[] = $item['slug'];
         }
+
+        Item::query()->whereNotIn('slug', $slugs)->delete();
     }
 }

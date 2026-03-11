@@ -26,12 +26,12 @@ class StepSyncService
     {
         $date ??= now()->toDateString();
 
-        $existing = DailySteps::query()
-            ->where('user_id', $user->id)
-            ->whereDate('date', $date)
-            ->first();
-
         if (config('anticheat.enabled')) {
+            $existing = DailySteps::query()
+                ->where('user_id', $user->id)
+                ->whereDate('date', $date)
+                ->first();
+
             if (config('anticheat.layers.heuristics')) {
                 $this->heuristicsService->check($user, $steps, $date, $existing);
             }
@@ -51,15 +51,10 @@ class StepSyncService
             $updateData['hourly_steps'] = $hourlySteps;
         }
 
-        if ($existing) {
-            $existing->update($updateData);
-            $dailySteps = $existing;
-        } else {
-            $dailySteps = DailySteps::create(array_merge(
-                ['user_id' => $user->id, 'date' => $date],
-                $updateData,
-            ));
-        }
+        $dailySteps = DailySteps::updateOrCreate(
+            ['user_id' => $user->id, 'date' => $date],
+            $updateData,
+        );
 
         $this->recalculateModifiedSteps($user, $date);
 
