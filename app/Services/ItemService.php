@@ -269,7 +269,7 @@ class ItemService
     {
         $distribution = [
             [ItemType::Offensive, 2],
-            [ItemType::Defensive, 2],
+            [ItemType::Defensive, 1],
             [ItemType::Strategic, 1],
         ];
 
